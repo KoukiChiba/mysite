@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>英単語・フレーズ 単語帳</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ヘッダー -->
+  <header class="header">
+    <h1 class="header__title">英単語・フレーズ 単語帳</h1>
+
+    <!-- フィルターボタン（出典で絞り込み） -->
+    <div class="filter">
+      <button class="filter__btn filter__btn--active" data-source="all">すべて</button>
+      <button class="filter__btn" data-source="TOEIC">TOEIC 金フレ</button>
+      <button class="filter__btn" data-source="ターゲット1900">ターゲット 1900</button>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="main">
+
+    <!-- 進捗表示 -->
+    <div class="progress">
+      <span id="progress-text">1 / 298</span>
+      <div class="progress__bar">
+        <div class="progress__fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- フラッシュカード本体 -->
+    <div class="card" id="card">
+
+      <!-- カードの出典ラベル -->
+      <div class="card__source" id="card-source">TOEIC 金フレ</div>
+
+      <!-- 問題文（英語） -->
+      <div class="card__question" id="card-question">
+        Loading...
+      </div>
+
+      <!-- 解答エリア（最初は非表示） -->
+      <div class="card__answer" id="card-answer">
+        <!-- 解答はここに表示される -->
+      </div>
+
+    </div>
+
+    <!-- ボタンエリア -->
+    <div class="actions">
+
+      <!-- 「答えを見る」ボタン（解答が非表示のときに表示） -->
+      <button class="btn btn--primary" id="btn-show-answer">
+        答えを見る
+      </button>
+
+      <!-- 「次の問題へ」ボタン（解答が表示された後に表示） -->
+      <button class="btn btn--next" id="btn-next" style="display: none;">
+        次の問題へ →
+      </button>
+
+      <!-- 「シャッフル」ボタン -->
+      <button class="btn btn--shuffle" id="btn-shuffle">
+        🔀 シャッフル
+      </button>
+
+      <!-- 「ランダム10問」ボタン -->
+      <button class="btn btn--random" id="btn-random">
+        🎲 ランダム10問
+      </button>
+
+      <!-- クイズ完了後に表示されるボタン（初期は非表示） -->
+      <button class="btn btn--retry" id="btn-retry" style="display: none;">
+        もう一度10問
+      </button>
+      <button class="btn btn--back" id="btn-back" style="display: none;">
+        全問に戻る
+      </button>
+
+    </div>
+
+  </main>
+
+  <!-- app.js を読み込む（defer で HTML 解析後に実行） -->
+  <script src="app.js" defer></script>
+
+</body>
+</html>
