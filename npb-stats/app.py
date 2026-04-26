@@ -561,7 +561,7 @@ with tab6:
                     contents.append({"role": "user", "parts": [{"text": prompt}]})
 
                     response = _client.models.generate_content(
-                        model="gemini-2.0-flash",
+                        model="gemini-2.5-flash",
                         contents=contents,
                     )
                     answer = response.text
