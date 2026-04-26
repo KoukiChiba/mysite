@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyForest - 学習タイマー</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #f0f9ea;
+      --surface:    #ffffff;
+      --surface2:   #f5fbf0;
+      --surface3:   #e8f5e0;
+      --green:      #4caf50;
+      --green-dark: #388e3c;
+      --green-mid:  #66bb6a;
+      --green-soft: #e8f5e0;
+      --sage:       #81c784;
+      --text:       #2e4a28;
+      --text-med:   #4a7040;
+      --muted:      #82a878;
+      --border:     #c8e6c9;
+      --shadow:     rgba(60,110,40,.10);
+      --coral:      #ff7043;
+      --coral-soft: #fff3f0;
+      --teal:       #26a69a;
+      --teal-soft:  #e0f7f4;
+      --yellow:     #ffd54f;
+    }
+
+    body {
+      font-family: 'Nunito', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+      padding: 22px 24px 18px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.07'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,.15);
+      position: relative;
+    }
+
+    header p {
+      color: rgba(255,255,255,.88);
+      margin-top: 3px;
+      font-size: 0.9rem;
+      position: relative;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: flex;
+      gap: 18px;
+      padding: 18px;
+      max-width: 940px;
+      margin: 0 auto;
+    }
+
+    /* ── Tree Panel ── */
+    .tree-panel { flex: 0 0 370px; }
+
+    .tree-wrap {
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px var(--shadow);
+      border: 2px solid #d7efc5;
+    }
+
+    #treeCanvas { display: block; width: 100%; }
+
+    .stage-badge {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 16px;
+      margin-top: 12px;
+      box-shadow: 0 2px 10px var(--shadow);
+    }
+
+    .stage-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stage-name-txt {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stage-next-txt {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .prog-track {
+      height: 8px;
+      background: var(--surface3);
+      border-radius: 4px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .prog-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #a8e063, #4caf50);
+      border-radius: 4px;
+      transition: width 0.9s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Cards ── */
+    .controls { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+
+    .card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 22px;
+      padding: 20px 22px;
+      box-shadow: 0 3px 16px var(--shadow);
+    }
+
+    .card-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-title::before {
+      content: '';
+      display: inline-block;
+      width: 3px;
+      height: 14px;
+      background: var(--green);
+      border-radius: 2px;
+    }
+
+    /* ── Learning Timer ── */
+    .session-clock {
+      font-size: 3.2rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      font-family: 'Nunito', monospace;
+      color: var(--green-dark);
+      text-align: center;
+      line-height: 1;
+      margin: 2px 0 8px;
+      letter-spacing: -1px;
+    }
+
+    .today-line {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+
+    .today-line span {
+      color: var(--green-dark);
+      font-weight: 800;
+    }
+
+    .btn-main {
+      width: 100%;
+      border: none;
+      border-radius: 100px;
+      padding: 15px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: linear-gradient(135deg, #a8e063 0%, #4caf50 100%);
+      color: #fff;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 14px rgba(76,175,80,.35);
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .btn-main:hover { filter: brightness(1.07); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(76,175,80,.4); }
+    .btn-main:active { transform: translateY(0); }
+
+    .btn-main.stop {
+      background: linear-gradient(135deg, #ff8a65 0%, #ff5722 100%);
+      box-shadow: 0 4px 14px rgba(255,87,34,.35);
+    }
+
+    .btn-main.stop:hover { box-shadow: 0 6px 20px rgba(255,87,34,.4); }
+
+    /* ── Pomodoro ── */
+    .pomo-row {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .ring-wrap {
+      position: relative;
+      flex-shrink: 0;
+      width: 118px;
+      height: 118px;
+    }
+
+    #pomoCanvas { position: absolute; top: 0; left: 0; }
+
+    .ring-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .ring-time {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ring-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .pomo-right { flex: 1; }
+
+    .pomo-status-txt {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+      color: var(--text);
+    }
+
+    .pomo-tomato {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .pomo-btns { display: flex; gap: 8px; }
+
+    .btn-pomo {
+      flex: 1;
+      border: none;
+      border-radius: 100px;
+      padding: 10px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.18s;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .btn-pomo.work {
+      background: linear-gradient(135deg, #ffb74d, var(--coral));
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(255,112,67,.3);
+    }
+
+    .btn-pomo.brk {
+      background: linear-gradient(135deg, #4dd0e1, var(--teal));
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(38,166,154,.3);
+    }
+
+    .btn-pomo:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+    .btn-sec {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1.5px solid var(--border);
+      border-radius: 100px;
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .btn-sec:hover { border-color: var(--green); color: var(--text); }
+
+    .pomo-cfg {
+      display: flex;
+      gap: 14px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1.5px solid var(--border);
+    }
+
+    .pomo-cfg label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .pomo-cfg input {
+      width: 50px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 4px 6px;
+      font-size: 0.85rem;
+      text-align: center;
+      font-weight: 700;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .pomo-cfg input:focus { outline: none; border-color: var(--green); }
+
+    /* ── History ── */
+    .hist-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0 3px;
+    }
+
+    .hist-date { color: var(--muted); font-size: 0.88rem; font-weight: 600; }
+    .hist-date.today { color: var(--green-dark); font-weight: 800; }
+    .hist-val { font-weight: 800; font-size: 0.9rem; color: var(--green-dark); }
+
+    .hist-bar-wrap {
+      height: 5px;
+      background: var(--surface3);
+      border-radius: 3px;
+      margin-top: 4px;
+    }
+
+    .hist-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #a8e063, #4caf50);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .hist-gap { height: 6px; }
+    .empty-msg { color: var(--muted); font-size: 0.88rem; font-weight: 600; }
+
+    @media (max-width: 700px) {
+      .layout { flex-direction: column; }
+      .tree-panel { flex: none; }
+      .session-clock { font-size: 2.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 StudyForest</h1>
+  <p>学習するほど、木が育つ</p>
+</header>
+
+<div class="layout">
+
+  <!-- Tree Panel -->
+  <div class="tree-panel">
+    <div class="tree-wrap">
+      <canvas id="treeCanvas" width="700" height="560"></canvas>
+    </div>
+    <div class="stage-badge">
+      <div class="stage-row">
+        <span class="stage-name-txt" id="stageName">🌰 種</span>
+        <span class="stage-next-txt" id="stageNext">学習を始めよう</span>
+      </div>
+      <div class="prog-track">
+        <div class="prog-fill" id="progFill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+
+    <!-- Learning Timer -->
+    <div class="card">
+      <div class="card-title">⏱ 学習タイマー</div>
+      <div class="session-clock" id="sessionClock">00:00:00</div>
+      <div class="today-line">今日の合計: <span id="todayTotal">0分</span></div>
+      <button class="btn-main" id="toggleBtn" onclick="toggleLearning()">学習開始 🌱</button>
+    </div>
+
+    <!-- Pomodoro -->
+    <div class="card">
+      <div class="card-title">🍅 ポモドーロタイマー</div>
+      <div class="pomo-row">
+        <div class="ring-wrap">
+          <canvas id="pomoCanvas" width="118" height="118"></canvas>
+          <div class="ring-text">
+            <div class="ring-time" id="pomoDisp">25:00</div>
+            <div class="ring-label" id="pomoMode">作業</div>
+          </div>
+        </div>
+        <div class="pomo-right">
+          <div class="pomo-status-txt" id="pomoStatus">準備完了 ✨</div>
+          <div class="pomo-tomato">🍅 <span id="pomoCount">0</span> セット完了</div>
+          <div class="pomo-btns">
+            <button class="btn-pomo work" id="pomoBtn" onclick="togglePomo()">開始</button>
+            <button class="btn-sec" onclick="resetPomo()">リセット</button>
+          </div>
+        </div>
+      </div>
+      <div class="pomo-cfg">
+        <label>作業 <input type="number" id="workMin" value="25" min="1" max="90" onchange="cfgPomo()"> 分</label>
+        <label>休憩 <input type="number" id="breakMin" value="5" min="1" max="30" onchange="cfgPomo()"> 分</label>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="card">
+      <div class="card-title">📊 学習履歴 (直近7日)</div>
+      <div id="histList"><p class="empty-msg">まだ記録がありません 🌱</p></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// Seeded PRNG
+// ─────────────────────────────────────────────
+let _seed = 0;
+function srand(s) { _seed = s >>> 0; }
+function rand() {
+  _seed = (Math.imul(1664525, _seed) + 1013904223) >>> 0;
+  return _seed / 4294967296;
+}
+
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+let isStudying = false;
+let sessionSecs = 0;
+let sessionTimer = null;
+
+let pomoRunning = false;
+let pomoIsBreak = false;
+let pomoSecs = 25 * 60;
+let pomoInterval = null;
+let pomoCountVal = 0;
+let workMins = 25;
+let breakMins = 5;
+
+// ─────────────────────────────────────────────
+// Storage
+// ─────────────────────────────────────────────
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function load() {
+  try { return JSON.parse(localStorage.getItem('sf_data') || '{}'); } catch { return {}; }
+}
+function save(data) { localStorage.setItem('sf_data', JSON.stringify(data)); }
+function getTodaySecs() { return load()[todayKey()] || 0; }
+function persistSecs(s) {
+  const data = load();
+  data[todayKey()] = (data[todayKey()] || 0) + s;
+  save(data);
+}
+
+// ─────────────────────────────────────────────
+// Format
+// ─────────────────────────────────────────────
+function fmtHMS(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function fmtHM(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h > 0 && m > 0) return `${h}時間${m}分`;
+  if (h > 0) return `${h}時間`;
+  return `${m}分`;
+}
+
+// ─────────────────────────────────────────────
+// Learning Timer
+// ─────────────────────────────────────────────
+function toggleLearning() {
+  if (!isStudying) {
+    isStudying = true;
+    sessionSecs = 0;
+    document.getElementById('toggleBtn').textContent = '学習終了 🍃';
+    document.getElementById('toggleBtn').classList.add('stop');
+    sessionTimer = setInterval(() => {
+      sessionSecs++;
+      document.getElementById('sessionClock').textContent = fmtHMS(sessionSecs);
+      refreshAll();
+    }, 1000);
+  } else {
+    stopStudying();
+  }
+}
+
+function stopStudying() {
+  if (!isStudying) return;
+  isStudying = false;
+  clearInterval(sessionTimer);
+  if (sessionSecs > 0) persistSecs(sessionSecs);
+  sessionSecs = 0;
+  document.getElementById('sessionClock').textContent = '00:00:00';
+  document.getElementById('toggleBtn').textContent = '学習開始 🌱';
+  document.getElementById('toggleBtn').classList.remove('stop');
+  refreshAll();
+}
+
+// ─────────────────────────────────────────────
+// Tree
+// ─────────────────────────────────────────────
+const treeCanvas = document.getElementById('treeCanvas');
+const treeCtx    = treeCanvas.getContext('2d');
+
+const STAGES = [
+  { min: 0,   max: 5,   depth: 0, name: '🌰 種',          leafCol: null },
+  { min: 5,   max: 15,  depth: 1, name: '🌱 芽吹き',       leafCol: '#7bc67e' },
+  { min: 15,  max: 30,  depth: 2, name: '🪴 小さな植物',   leafCol: '#6db86f' },
+  { min: 30,  max: 60,  depth: 3, name: '🌲 若木',          leafCol: '#5aaa5c' },
+  { min: 60,  max: 90,  depth: 4, name: '🌳 成長中',        leafCol: '#4caf50' },
+  { min: 90,  max: 120, depth: 5, name: '🌳 大木',          leafCol: '#43a047' },
+  { min: 120, max: 180, depth: 6, name: '🌲 立派な木',      leafCol: '#388e3c' },
+  { min: 180, max: 1e9, depth: 7, name: '🌳 満開の大木',   leafCol: '#2e7d32' },
+];
+
+function getStageIdx(totalMins) {
+  for (let i = STAGES.length - 1; i >= 0; i--) {
+    if (totalMins >= STAGES[i].min) return i;
+  }
+  return 0;
+}
+
+function drawCloud(ctx, cx, cy, scale) {
+  ctx.save();
+  ctx.globalAlpha = 0.92;
+  ctx.fillStyle = '#fff';
+  const parts = [
+    [0, 0, scale],
+    [-scale * 0.65, scale * 0.2, scale * 0.72],
+    [scale * 0.65, scale * 0.2, scale * 0.72],
+    [-scale * 0.3, -scale * 0.28, scale * 0.6],
+    [scale * 0.3, -scale * 0.28, scale * 0.6],
+  ];
+  for (const [ox, oy, r] of parts) {
+    ctx.beginPath();
+    ctx.arc(cx + ox, cy + oy, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawBranch(ctx, x1, y1, angle, len, depth, leafCol) {
+  if (depth <= 0 || len < 2) return;
+  const x2 = x1 + Math.cos(angle) * len;
+  const y2 = y1 - Math.sin(angle) * len;
+
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.lineWidth = Math.max(1, depth * 2.5);
+  ctx.lineCap = 'round';
+  // Warm brown for bark
+  if (depth >= 5)      ctx.strokeStyle = '#6d4c28';
+  else if (depth >= 3) ctx.strokeStyle = '#8d6538';
+  else                 ctx.strokeStyle = '#a0804a';
+  ctx.stroke();
+
+  if (depth === 1) {
+    for (let i = 0; i < 7; i++) {
+      const ox = (rand() - 0.5) * 28;
+      const oy = (rand() - 0.5) * 28;
+      const r  = 5 + rand() * 6;
+      ctx.beginPath();
+      ctx.arc(x2 + ox, y2 + oy, r, 0, Math.PI * 2);
+      ctx.globalAlpha = 0.72 + rand() * 0.28;
+      ctx.fillStyle = leafCol;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    return;
+  }
+
+  const spread = 0.40 + rand() * 0.07;
+  drawBranch(ctx, x2, y2, angle + spread,  len * 0.72, depth - 1, leafCol);
+  drawBranch(ctx, x2, y2, angle - spread,  len * 0.72, depth - 1, leafCol);
+  if (depth >= 4) {
+    drawBranch(ctx, x2, y2, angle + (rand() - 0.5) * 0.18, len * 0.56, depth - 2, leafCol);
+  }
+}
+
+function drawTree(totalSecs) {
+  const totalMins = totalSecs / 60;
+  const si    = getStageIdx(totalMins);
+  const stage = STAGES[si];
+  const next  = STAGES[Math.min(si + 1, STAGES.length - 1)];
+
+  let prog = si < STAGES.length - 1
+    ? Math.min(1, (totalMins - stage.min) / (stage.max - stage.min))
+    : 1;
+
+  document.getElementById('stageName').textContent = stage.name;
+  document.getElementById('progFill').style.width = (prog * 100).toFixed(1) + '%';
+  if (si < STAGES.length - 1) {
+    const rem = Math.ceil(next.min - totalMins);
+    document.getElementById('stageNext').textContent = `あと${rem}分で次のステージ ✨`;
+  } else {
+    document.getElementById('stageNext').textContent = '最高レベル達成！🎉';
+  }
+
+  const W = treeCanvas.width;
+  const H = treeCanvas.height;
+  treeCtx.clearRect(0, 0, W, H);
+
+  // ── Sky ──
+  const sky = treeCtx.createLinearGradient(0, 0, 0, H * 0.65);
+  sky.addColorStop(0,   '#b3e5fc');
+  sky.addColorStop(0.5, '#c8f0e0');
+  sky.addColorStop(1,   '#d4f5c4');
+  treeCtx.fillStyle = sky;
+  treeCtx.fillRect(0, 0, W, H);
+
+  // ── Sun ──
+  const sunX = W * 0.15, sunY = H * 0.13;
+  const sunGlow = treeCtx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 80);
+  sunGlow.addColorStop(0,   'rgba(255,240,100,.55)');
+  sunGlow.addColorStop(0.45,'rgba(255,220,60,.25)');
+  sunGlow.addColorStop(1,   'rgba(255,200,0,0)');
+  treeCtx.fillStyle = sunGlow;
+  treeCtx.beginPath();
+  treeCtx.arc(sunX, sunY, 80, 0, Math.PI * 2);
+  treeCtx.fill();
+  treeCtx.beginPath();
+  treeCtx.arc(sunX, sunY, 22, 0, Math.PI * 2);
+  treeCtx.fillStyle = '#ffe566';
+  treeCtx.fill();
+
+  // ── Clouds ──
+  srand(888);
+  const clouds = [
+    [W * 0.5, H * 0.09, 28],
+    [W * 0.72, H * 0.16, 22],
+    [W * 0.35, H * 0.20, 18],
+    [W * 0.82, H * 0.07, 16],
+  ];
+  for (const [cx, cy, sc] of clouds) {
+    drawCloud(treeCtx, cx, cy, sc);
+  }
+
+  // ── Background hills ──
+  treeCtx.beginPath();
+  treeCtx.moveTo(0, H * 0.62);
+  treeCtx.bezierCurveTo(W * 0.2, H * 0.50, W * 0.45, H * 0.60, W * 0.6, H * 0.52);
+  treeCtx.bezierCurveTo(W * 0.75, H * 0.44, W * 0.9, H * 0.57, W, H * 0.55);
+  treeCtx.lineTo(W, H);
+  treeCtx.lineTo(0, H);
+  treeCtx.fillStyle = '#90d06a';
+  treeCtx.fill();
+
+  treeCtx.beginPath();
+  treeCtx.moveTo(0, H * 0.72);
+  treeCtx.bezierCurveTo(W * 0.3, H * 0.63, W * 0.6, H * 0.76, W, H * 0.68);
+  treeCtx.lineTo(W, H);
+  treeCtx.lineTo(0, H);
+  treeCtx.fillStyle = '#72c44a';
+  treeCtx.fill();
+
+  // ── Ground ──
+  const groundY = H - 68;
+  const gnd = treeCtx.createLinearGradient(0, groundY, 0, H);
+  gnd.addColorStop(0, '#5ab830');
+  gnd.addColorStop(0.4, '#4da828');
+  gnd.addColorStop(1, '#3a8818');
+  treeCtx.fillStyle = gnd;
+  treeCtx.fillRect(0, groundY, W, H - groundY);
+
+  // Ground highlight strip
+  treeCtx.beginPath();
+  treeCtx.moveTo(0, groundY);
+  treeCtx.bezierCurveTo(W * 0.3, groundY - 10, W * 0.7, groundY + 6, W, groundY - 4);
+  treeCtx.lineTo(W, groundY);
+  treeCtx.lineTo(0, groundY);
+  treeCtx.fillStyle = '#70d040';
+  treeCtx.fill();
+
+  // Small flowers on ground
+  srand(555);
+  const flowerColors = ['#ff6b9d','#ffb347','#fff44f','#ff6b6b','#c589e8'];
+  for (let i = 0; i < 10; i++) {
+    const fx = 30 + rand() * (W - 60);
+    const fy = groundY + 8 + rand() * 28;
+    const fc = flowerColors[Math.floor(rand() * flowerColors.length)];
+    treeCtx.beginPath();
+    treeCtx.arc(fx, fy, 4, 0, Math.PI * 2);
+    treeCtx.fillStyle = fc;
+    treeCtx.globalAlpha = 0.85;
+    treeCtx.fill();
+    treeCtx.globalAlpha = 1;
+    // stem
+    treeCtx.beginPath();
+    treeCtx.moveTo(fx, fy + 3);
+    treeCtx.lineTo(fx, fy + 12);
+    treeCtx.strokeStyle = '#4a9928';
+    treeCtx.lineWidth = 1.5;
+    treeCtx.stroke();
+  }
+
+  const baseX = W / 2;
+  const baseY = groundY;
+
+  // ── Stage 0: Seed ──
+  if (stage.depth === 0) {
+    treeCtx.globalAlpha = 0.6 + prog * 0.4;
+    treeCtx.beginPath();
+    treeCtx.ellipse(baseX, baseY - 8, 11, 8, 0, 0, Math.PI * 2);
+    treeCtx.fillStyle = '#8d6038';
+    treeCtx.fill();
+    treeCtx.beginPath();
+    treeCtx.ellipse(baseX + 3, baseY - 11, 6, 5, 0.5, 0, Math.PI * 2);
+    treeCtx.fillStyle = '#b08040';
+    treeCtx.fill();
+    treeCtx.globalAlpha = 1;
+    if (prog > 0.35) {
+      const sh = (prog - 0.35) / 0.65 * 28;
+      treeCtx.beginPath();
+      treeCtx.moveTo(baseX, baseY - 14);
+      treeCtx.lineTo(baseX, baseY - 14 - sh);
+      treeCtx.strokeStyle = '#5aaa5c';
+      treeCtx.lineWidth = 2.5;
+      treeCtx.lineCap = 'round';
+      treeCtx.stroke();
+    }
+    return;
+  }
+
+  // ── Stages 1–7: Fractal tree ──
+  srand(stage.depth * 1337 + 99);
+  const trunkH = 26 + stage.depth * 19;
+  drawBranch(treeCtx, baseX, baseY, Math.PI / 2, trunkH, stage.depth, stage.leafCol);
+
+  // Soft ambient glow for big trees
+  if (stage.depth >= 5) {
+    const gx = baseX, gy = baseY - trunkH * 2.4;
+    const gr = treeCtx.createRadialGradient(gx, gy, 0, gx, gy, trunkH * 1.7);
+    gr.addColorStop(0, `rgba(100,200,80,${0.08 + (stage.depth - 5) * 0.04})`);
+    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    treeCtx.fillStyle = gr;
+    treeCtx.beginPath();
+    treeCtx.arc(gx, gy, trunkH * 1.7, 0, Math.PI * 2);
+    treeCtx.fill();
+  }
+}
+
+// ─────────────────────────────────────────────
+// Pomodoro
+// ─────────────────────────────────────────────
+const pomoCanvas = document.getElementById('pomoCanvas');
+const pomoCtx    = pomoCanvas.getContext('2d');
+
+function drawPomoRing() {
+  const W = pomoCanvas.width, H = pomoCanvas.height;
+  const cx = W / 2, cy = H / 2, r = 46;
+  pomoCtx.clearRect(0, 0, W, H);
+
+  const total = (pomoIsBreak ? breakMins : workMins) * 60;
+  const frac  = pomoSecs / total;
+
+  // Track bg
+  pomoCtx.beginPath();
+  pomoCtx.arc(cx, cy, r, 0, Math.PI * 2);
+  pomoCtx.strokeStyle = '#e8f5e0';
+  pomoCtx.lineWidth = 10;
+  pomoCtx.stroke();
+
+  // Filled arc (counts down)
+  const sa = -Math.PI / 2;
+  const ea = sa + frac * Math.PI * 2;
+
+  const arcGrad = pomoCtx.createLinearGradient(cx - r, cy, cx + r, cy);
+  if (pomoIsBreak) {
+    arcGrad.addColorStop(0, '#4dd0e1');
+    arcGrad.addColorStop(1, '#26a69a');
+  } else {
+    arcGrad.addColorStop(0, '#ffb74d');
+    arcGrad.addColorStop(1, '#ff7043');
+  }
+
+  pomoCtx.beginPath();
+  pomoCtx.arc(cx, cy, r, sa, ea);
+  pomoCtx.strokeStyle = arcGrad;
+  pomoCtx.lineWidth = 10;
+  pomoCtx.lineCap = 'round';
+  pomoCtx.stroke();
+
+  // Inner soft circle
+  pomoCtx.beginPath();
+  pomoCtx.arc(cx, cy, r - 14, 0, Math.PI * 2);
+  pomoCtx.fillStyle = pomoIsBreak ? '#e0f7f4' : '#fff3f0';
+  pomoCtx.fill();
+}
+
+function refreshPomoUI() {
+  const m = Math.floor(pomoSecs / 60);
+  const s = pomoSecs % 60;
+  document.getElementById('pomoDisp').textContent =
+    `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.getElementById('pomoMode').textContent = pomoIsBreak ? '休憩 💙' : '作業 🍅';
+  document.getElementById('pomoStatus').textContent =
+    !pomoRunning
+      ? '準備完了 ✨'
+      : (pomoIsBreak ? '🔵 休憩タイム！' : '🔴 集中タイム！');
+  document.getElementById('pomoBtn').textContent = pomoRunning ? '一時停止' : '開始';
+  document.getElementById('pomoBtn').className = 'btn-pomo ' + (pomoIsBreak ? 'brk' : 'work');
+  drawPomoRing();
+}
+
+function togglePomo() {
+  if (pomoRunning) {
+    clearInterval(pomoInterval);
+    pomoRunning = false;
+  } else {
+    pomoRunning = true;
+    pomoInterval = setInterval(tickPomo, 1000);
+  }
+  refreshPomoUI();
+}
+
+function tickPomo() {
+  if (pomoSecs <= 0) {
+    if (!pomoIsBreak) {
+      pomoCountVal++;
+      document.getElementById('pomoCount').textContent = pomoCountVal;
+      pomoIsBreak = true;
+      pomoSecs = breakMins * 60;
+      beep(528, 0.6);
+      notify('お疲れ様！休憩しよ 🌿', `${breakMins}分間ゆっくり休もう`);
+    } else {
+      pomoIsBreak = false;
+      pomoSecs = workMins * 60;
+      beep(660, 0.4);
+      notify('作業再開しよ！💪', `${workMins}分間集中！`);
+    }
+  } else {
+    pomoSecs--;
+  }
+  refreshPomoUI();
+}
+
+function resetPomo() {
+  clearInterval(pomoInterval);
+  pomoRunning = false;
+  pomoIsBreak = false;
+  pomoSecs = workMins * 60;
+  refreshPomoUI();
+}
+
+function cfgPomo() {
+  workMins  = Math.max(1, parseInt(document.getElementById('workMin').value)  || 25);
+  breakMins = Math.max(1, parseInt(document.getElementById('breakMin').value) || 5);
+  if (!pomoRunning) {
+    pomoSecs = (pomoIsBreak ? breakMins : workMins) * 60;
+    refreshPomoUI();
+  }
+}
+
+// ─────────────────────────────────────────────
+// Audio & Notifications
+// ─────────────────────────────────────────────
+function beep(freq, dur) {
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.22, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+    osc.start();
+    osc.stop(ac.currentTime + dur);
+  } catch(e) {}
+}
+
+function notify(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body });
+  }
+}
+
+// ─────────────────────────────────────────────
+// History
+// ─────────────────────────────────────────────
+function renderHistory() {
+  const data    = load();
+  const today   = todayKey();
+  const entries = Object.entries(data)
+    .filter(([k]) => /^\d{4}-\d{2}-\d{2}$/.test(k))
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .slice(0, 7);
+
+  const el = document.getElementById('histList');
+  if (entries.length === 0) {
+    el.innerHTML = '<p class="empty-msg">まだ記録がありません 🌱</p>';
+    return;
+  }
+
+  const maxS = Math.max(...entries.map(e => e[1]));
+  el.innerHTML = entries.map(([date, secs], i) => {
+    const isToday = date === today;
+    const label = isToday ? '今日' : date.slice(5).replace('-', '/');
+    const bar = maxS > 0 ? (secs / maxS * 100).toFixed(1) : 0;
+    return `
+      ${i > 0 ? '<div class="hist-gap"></div>' : ''}
+      <div class="hist-bar-wrap"><div class="hist-bar" style="width:${bar}%"></div></div>
+      <div class="hist-item">
+        <span class="hist-date ${isToday ? 'today' : ''}">${label}</span>
+        <span class="hist-val">${fmtHM(secs)}</span>
+      </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// Refresh
+// ─────────────────────────────────────────────
+function refreshAll() {
+  const total = getTodaySecs() + sessionSecs;
+  document.getElementById('todayTotal').textContent = fmtHM(total);
+  drawTree(total);
+  renderHistory();
+}
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+refreshAll();
+refreshPomoUI();
+</script>
+</body>
+</html>
