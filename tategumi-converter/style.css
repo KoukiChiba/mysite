@@ -1,0 +1,337 @@
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #fdf6e3;
+  --text: #2c2416;
+  --surface: #f7eed6;
+  --border: #e0d4b8;
+  --accent: #8b6914;
+  --sidebar-w: 240px;
+  --font-size: 20px;
+  --topbar-h: 48px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+body { font-family: 'Hiragino Mincho ProN', 'Noto Serif JP', 'Yu Mincho', serif; }
+
+.hidden { display: none !important; }
+
+/* ── Themes ── */
+body.theme-light {
+  --bg: #ffffff; --text: #1a1a1a; --surface: #f2f2f2;
+  --border: #ddd; --accent: #555;
+}
+body.theme-sepia {
+  --bg: #fdf6e3; --text: #2c2416; --surface: #f7eed6;
+  --border: #e0d4b8; --accent: #8b6914;
+}
+body.theme-dark {
+  --bg: #1a1a1a; --text: #d4c9b0; --surface: #252525;
+  --border: #3a3a3a; --accent: #a89060;
+}
+
+/* ── Upload screen ── */
+.upload-screen {
+  min-height: 100vh;
+  background: #1c1008;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-card {
+  background: #2a1a0a;
+  border: 1px solid #5a3a10;
+  border-radius: 20px;
+  padding: 56px 48px;
+  text-align: center;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5);
+}
+
+.upload-icon { font-size: 56px; margin-bottom: 20px; }
+
+.upload-title {
+  font-size: 26px;
+  color: #f0d090;
+  margin-bottom: 12px;
+  letter-spacing: 0.1em;
+}
+
+.upload-desc {
+  color: #a08050;
+  font-size: 14px;
+  line-height: 1.8;
+  margin-bottom: 32px;
+}
+
+.upload-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.upload-btn {
+  display: inline-block;
+  padding: 14px 32px;
+  background: #c8860a;
+  color: #fff;
+  border-radius: 100px;
+  font-size: 16px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: background .2s;
+  font-family: inherit;
+}
+
+.upload-btn:hover { background: #e09a10; }
+
+.upload-btn--secondary {
+  background: transparent;
+  border: 2px solid #c8860a;
+  color: #c8860a;
+}
+
+.upload-btn--secondary:hover { background: #c8860a22; }
+
+.upload-note {
+  margin-top: 20px;
+  color: #6a5030;
+  font-size: 12px;
+}
+
+/* ── Reader screen ── */
+.reader-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh; /* アドレスバー込みの動的ビューポート高さ */
+  background: var(--bg);
+  color: var(--text);
+  transition: background .3s, color .3s;
+}
+
+/* ── Topbar ── */
+.topbar {
+  height: var(--topbar-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 6px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.topbar-title {
+  flex: 1;
+  text-align: center;
+  font-size: 14px;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.05em;
+}
+
+.topbar-controls { display: flex; gap: 4px; }
+
+.topbar-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background .15s;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+}
+
+.topbar-btn:hover { background: var(--border); }
+.topbar-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── Reader body ── */
+.reader-body {
+  flex: 1;
+  min-height: 0; /* iOS Safari flex高さ伝播バグ対策 */
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  transition: transform .25s;
+}
+
+.sidebar.closed {
+  transform: translateX(calc(-1 * var(--sidebar-w)));
+  position: absolute;
+  height: 100%;
+  z-index: 5;
+  box-shadow: 4px 0 16px rgba(0,0,0,.2);
+}
+
+.sidebar-header {
+  padding: 14px 18px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+}
+
+.file-list { list-style: none; }
+
+.file-list li {
+  padding: 12px 18px;
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.6;
+  color: var(--text);
+  transition: background .15s;
+  word-break: break-all;
+}
+
+.file-list li:hover { background: var(--border); }
+.file-list li.active { background: var(--accent); color: #fff; }
+
+/* ── Main reading area ── */
+.reader-main {
+  flex: 1;
+  min-height: 0; /* iOS Safari flex高さ伝播バグ対策 */
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 48px 60px;
+  padding-bottom: calc(48px + var(--safe-bottom));
+  direction: rtl;
+}
+
+/* RTLで内部を正しく表示するためにLTRに戻す */
+.book-page {
+  direction: ltr;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  /* height: 100% はiOS Safariで解決されないため明示的に指定 */
+  height: calc(100vh - var(--topbar-h) - 96px - var(--safe-bottom));
+  height: calc(100dvh - var(--topbar-h) - 96px - var(--safe-bottom));
+  font-size: var(--font-size);
+  line-height: 2;
+  color: var(--text);
+  column-gap: 60px;
+  white-space: pre-wrap;
+  transition: font-size .2s, color .3s;
+}
+
+/* Markdownスタイル（縦書き対応） */
+.book-page h1, .book-page h2, .book-page h3 {
+  font-size: 1.4em;
+  margin-inline: 0.5em;
+  color: var(--accent);
+  border-block-end: 1px solid var(--border);
+  padding-block-end: 0.4em;
+}
+
+.book-page h2 { font-size: 1.2em; }
+.book-page h3 { font-size: 1.1em; }
+
+.book-page p { margin-inline: 0; }
+
+.book-page strong { font-weight: 700; }
+.book-page em { font-style: italic; }
+
+.book-page hr {
+  border: none;
+  border-inline-start: 2px solid var(--border);
+  height: 3em;
+  margin-inline: 1em;
+}
+
+.book-page blockquote {
+  border-inline-start: 3px solid var(--accent);
+  padding-inline-start: 1em;
+  color: var(--accent);
+  margin-inline: 0.5em;
+}
+
+.book-page ul, .book-page ol {
+  padding-inline-start: 1.5em;
+  list-style-position: inside; /* 縦書きモードでマーカーがトップバーに被らないよう内側に収める */
+}
+
+.book-page img {
+  /* 縦書きモードではheightが縦方向のサイズになる */
+  max-height: calc(100vh - var(--topbar-h) - 96px - var(--safe-bottom));
+  max-height: calc(100dvh - var(--topbar-h) - 96px - var(--safe-bottom));
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* ── Page nav ── */
+.page-nav {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 20;
+}
+
+.nav-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+  transition: opacity .2s;
+}
+
+.nav-btn:disabled { opacity: 0.3; cursor: default; }
+.nav-btn:not(:disabled):hover { opacity: 0.85; }
+
+.page-info {
+  text-align: center;
+  font-size: 11px;
+  color: var(--accent);
+}
+
+/* ── Scrollbar styling ── */
+.reader-main::-webkit-scrollbar { height: 6px; }
+.reader-main::-webkit-scrollbar-track { background: var(--surface); }
+.reader-main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+@media (max-width: 600px) {
+  .reader-main { padding: 32px 16px; padding-bottom: calc(44px + var(--safe-bottom)); }
+  .book-page {
+    height: calc(100vh - var(--topbar-h) - 76px - var(--safe-bottom));
+    height: calc(100dvh - var(--topbar-h) - 76px - var(--safe-bottom));
+  }
+  .sidebar { width: 200px; }
+}

@@ -17,6 +17,7 @@
       <button class="filter__btn filter__btn--active" data-source="all">すべて</button>
       <button class="filter__btn" data-source="TOEIC">TOEIC 金フレ</button>
       <button class="filter__btn" data-source="ターゲット1900">ターゲット 1900</button>
+      <button class="filter__btn filter__btn--bookmark" data-source="bookmark">★ ブックマーク</button>
     </div>
   </header>
 
@@ -33,6 +34,9 @@
 
     <!-- フラッシュカード本体 -->
     <div class="card" id="card">
+
+      <!-- ブックマークボタン -->
+      <button class="card__bookmark" id="btn-bookmark" aria-label="ブックマーク">☆</button>
 
       <!-- カードの出典ラベル -->
       <div class="card__source" id="card-source">TOEIC 金フレ</div>

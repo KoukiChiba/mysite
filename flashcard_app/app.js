@@ -2933,6 +2933,26 @@ let baseCards    = [...allCards]; // フィルター後の全カード（ラン�
 let currentIndex = 0;             // 今何番目のカードを表示しているか
 let isAnswerVisible = false;      // 解答が表示されているかどうか
 let isQuizMode = false;           // ランダム10問モード中かどうか
+let isBookmarkMode = false;       // ブックマーク絞り込みモード中かどうか
+
+// =============================================
+// ブックマーク管理（localStorage）
+// =============================================
+const BOOKMARK_KEY = 'flashcard_bookmarks';
+
+function loadBookmarks() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(BOOKMARK_KEY) || '[]'));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveBookmarks(set) {
+  localStorage.setItem(BOOKMARK_KEY, JSON.stringify([...set]));
+}
+
+let bookmarks = loadBookmarks();
 
 // =============================================
 // DOM 要素の取得
@@ -2947,6 +2967,7 @@ const btnShuffle     = document.getElementById('btn-shuffle');
 const btnRandom      = document.getElementById('btn-random');
 const btnRetry       = document.getElementById('btn-retry');
 const btnBack        = document.getElementById('btn-back');
+const btnBookmark    = document.getElementById('btn-bookmark');
 const progressText   = document.getElementById('progress-text');
 const progressFill   = document.getElementById('progress-fill');
 const filterButtons  = document.querySelectorAll('.filter__btn');
@@ -2982,6 +3003,7 @@ function showCard() {
   btnShowAnswer.style.display = 'block';
   btnNext.style.display = 'none';
 
+  updateBookmarkButton(card);
   updateProgress();
 }
 
@@ -2995,6 +3017,48 @@ function updateProgress() {
   progressText.textContent = `${current} / ${total}`;
   progressFill.style.width = `${percent}%`;
 }
+
+// =============================================
+// 関数: ブックマークボタンの表示を更新する
+// =============================================
+function updateBookmarkButton(card) {
+  const isMarked = bookmarks.has(card.q);
+  btnBookmark.textContent = isMarked ? '★' : '☆';
+  btnBookmark.classList.toggle('card__bookmark--active', isMarked);
+}
+
+// =============================================
+// イベント: ブックマークボタンのクリック
+// =============================================
+btnBookmark.addEventListener('click', () => {
+  const card = currentCards[currentIndex];
+  if (!card) return;
+
+  if (bookmarks.has(card.q)) {
+    bookmarks.delete(card.q);
+    // ブックマークモード中に解除したら次のカードへ（またはリスト更新）
+    if (isBookmarkMode) {
+      currentCards = allCards.filter(c => bookmarks.has(c.q));
+      if (currentCards.length === 0) {
+        // ブックマークが空になったら全カードに戻す
+        isBookmarkMode = false;
+        filterButtons.forEach(b => {
+          b.classList.toggle('filter__btn--active', b.dataset.source === 'all');
+        });
+        baseCards = [...allCards];
+        currentCards = [...allCards];
+        currentIndex = 0;
+      } else {
+        currentIndex = Math.min(currentIndex, currentCards.length - 1);
+      }
+      showCard();
+    }
+  } else {
+    bookmarks.add(card.q);
+  }
+  saveBookmarks(bookmarks);
+  updateBookmarkButton(currentCards[currentIndex]);
+});
 
 // =============================================
 // 関数: 配列をシャッフルする（Fisher-Yates アルゴリズム）
@@ -3058,14 +3122,19 @@ filterButtons.forEach(btn => {
 
     const source = btn.dataset.source;
 
+    isQuizMode = false;
+    isBookmarkMode = false;
+
     if (source === 'all') {
       baseCards = [...allCards];
+    } else if (source === 'bookmark') {
+      isBookmarkMode = true;
+      baseCards = allCards.filter(card => bookmarks.has(card.q));
     } else {
       baseCards = allCards.filter(card => card.source === source);
     }
 
     // クイズモードを解除して全カード表示に戻す
-    isQuizMode = false;
     currentCards = [...baseCards];
     currentIndex = 0;
     showCard();
@@ -3112,6 +3181,7 @@ function startRandomQuiz(count) {
   btnNext.style.display = 'none';
   btnRandom.style.display = 'none';
   btnShuffle.style.display = 'none';
+  btnBookmark.style.display = 'block';
   btnRetry.style.display = 'none';
   btnBack.style.display = 'none';
 
@@ -3140,6 +3210,7 @@ function showQuizComplete() {
 
   btnShowAnswer.style.display = 'none';
   btnNext.style.display = 'none';
+  btnBookmark.style.display = 'none';
   btnRetry.style.display = 'block';
   btnBack.style.display = 'block';
 }
@@ -3151,6 +3222,7 @@ function resetQuizButtons() {
   cardEl.classList.remove('card--complete');
   btnRandom.style.display = 'block';
   btnShuffle.style.display = 'block';
+  btnBookmark.style.display = 'block';
   btnRetry.style.display = 'none';
   btnBack.style.display = 'none';
 }

@@ -1,9 +1,8 @@
 // Google スプレッドシートの設定
 // 各シートは「ファイル > 共有 > ウェブに公開 > CSV」で公開してください
-// （「ウェブに公開」した URL は CORS ヘッダーが付くためプロキシ不要）
 
 const csvUrl = (id, gid = 0) =>
-  `https://docs.google.com/spreadsheets/d/${id}/pub?gid=${gid}&single=true&output=csv`
+  `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&gid=${gid}`
 
 export const SHEETS = {
   travel: {

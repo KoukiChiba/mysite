@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react'
 import { parseCsv, csvToObjects } from '../utils/csvParser'
 
-// 開発時: Vite dev server のプロキシ経由（CORS不要）
-// 本番時: "ウェブに公開" した pub URL は CORS ヘッダー付きなので直接 fetch
+// gviz/tq エンドポイントはブラウザから直接 fetch 可能（CORS ヘッダー付き）
+// 開発時も同様に直接 fetch する
 function resolveUrl(url) {
-  if (import.meta.env.DEV) {
-    // https://docs.google.com/spreadsheets/... → /sheets-proxy/...
-    return url.replace('https://docs.google.com/spreadsheets', '/sheets-proxy')
-  }
   return url
 }
 

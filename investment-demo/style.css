@@ -1,0 +1,950 @@
+/* ─── Reset ─── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ─── Variables ─── */
+:root {
+    --bg: #EDE9FF;
+    --surface: #FFFFFF;
+    --border: rgba(109, 40, 217, 0.09);
+    --shadow-sm: 0 2px 10px rgba(91, 33, 182, 0.07);
+    --shadow: 0 6px 24px rgba(91, 33, 182, 0.1);
+    --shadow-lg: 0 16px 48px rgba(91, 33, 182, 0.18);
+
+    /* Gradient hero */
+    --grad-a: #4338CA;
+    --grad-b: #7C3AED;
+    --grad-c: #9333EA;
+
+    /* Action buttons */
+    --buy-from: #6D28D9;
+    --buy-to:   #4F46E5;
+    --sell-from: #E11D48;
+    --sell-to:   #F43F5E;
+
+    /* Status */
+    --up:   #059669;
+    --down: #E11D48;
+
+    /* Text */
+    --ink:       #1E1B4B;
+    --ink-muted: #6B7280;
+}
+
+/* ─── Body ─── */
+body {
+    background: var(--bg);
+    background-image:
+        radial-gradient(ellipse 90% 55% at 15% -5%,  rgba(167, 139, 250, 0.32) 0%, transparent 65%),
+        radial-gradient(ellipse 65% 70% at 85% 105%, rgba(196, 181, 253, 0.22) 0%, transparent 65%);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'Albert Sans', sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden;
+}
+
+/* ─── App Shell ─── */
+.app-shell {
+    width: 100%;
+    max-width: 460px;
+    padding-bottom: 90px;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+@media (min-width: 460px) {
+    .app-shell {
+        box-shadow: 0 0 80px rgba(91, 33, 182, 0.14);
+        background: white;
+    }
+}
+
+/* ─── Hero Card ─── */
+.hero-card {
+    background: linear-gradient(140deg, var(--grad-a) 0%, var(--grad-b) 55%, var(--grad-c) 100%);
+    padding: 52px 22px 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Decorative circles inside the gradient card */
+.hero-card::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+    pointer-events: none;
+}
+
+.hero-card::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: -30px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    pointer-events: none;
+}
+
+.hero-top {
+    margin-bottom: 26px;
+}
+
+.hero-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.hero-label {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.72);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.btn-icon-ghost {
+    background: rgba(255, 255, 255, 0.18);
+    border: none;
+    color: white;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: background 0.2s;
+}
+
+.btn-icon-ghost:hover { background: rgba(255, 255, 255, 0.28); }
+
+.hero-balance-row {
+    display: block;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.hero-currency {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+    vertical-align: super;
+    margin-right: 1px;
+}
+
+.hero-balance {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 0;
+    line-height: 1.1;
+}
+
+.hero-profit-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hero-profit-badge {
+    padding: 4px 13px;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    backdrop-filter: blur(4px);
+    transition: background 0.4s, color 0.4s;
+}
+
+.hero-profit-badge.profit-up {
+    background: rgba(16, 185, 129, 0.32);
+    color: #A7F3D0;
+}
+
+.hero-profit-badge.profit-down {
+    background: rgba(239, 68, 68, 0.32);
+    color: #FCA5A5;
+}
+
+.hero-profit-label {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.58);
+}
+
+/* ─── Asset Breakdown (inside hero) ─── */
+.asset-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    position: relative;
+    z-index: 1;
+}
+
+.asset-mini-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.13);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    padding: 11px 15px;
+    transition: background 0.2s;
+}
+
+.asset-mini-card:hover { background: rgba(255, 255, 255, 0.2); }
+
+.asset-icon-wrap {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 0.82rem;
+    flex-shrink: 0;
+    color: white;
+}
+
+.asset-icon-wrap.sp500 { background: linear-gradient(135deg, #60A5FA, #1D4ED8); }
+.asset-icon-wrap.fx    { background: linear-gradient(135deg, #34D399, #059669); }
+.asset-icon-wrap.btc   { background: linear-gradient(135deg, #FBBF24, #D97706); }
+.asset-icon-wrap.jpy   { background: linear-gradient(135deg, #9CA3AF, #4B5563); }
+
+.mini-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mini-label {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.62);
+    font-weight: 500;
+}
+
+.mini-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: white;
+}
+
+.mini-pct {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    min-width: 54px;
+    text-align: center;
+}
+
+.mini-pct.plus {
+    color: #34D399;
+    background: rgba(52, 211, 153, 0.18);
+}
+
+.mini-pct.minus {
+    color: #FC8181;
+    background: rgba(252, 129, 129, 0.18);
+}
+
+/* ─── Trading Area ─── */
+.trading-area {
+    padding: 20px 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* ─── Mode Selector ─── */
+.mode-selector {
+    display: flex;
+    background: var(--surface);
+    padding: 4px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    gap: 4px;
+}
+
+.mode-tab {
+    flex: 1;
+    padding: 9px 0;
+    border: none;
+    background: none;
+    color: var(--ink-muted);
+    font-weight: 600;
+    font-size: 0.84rem;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Albert Sans', sans-serif;
+}
+
+.mode-tab.active {
+    background: linear-gradient(135deg, var(--buy-from), var(--buy-to));
+    color: white;
+    box-shadow: 0 4px 14px rgba(109, 40, 217, 0.38);
+}
+
+/* ─── View Tabs ─── */
+.view-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+
+.view-tab {
+    flex: 1;
+    padding: 7px 0;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Albert Sans', sans-serif;
+}
+
+.view-tab.active {
+    background: rgba(109, 40, 217, 0.08);
+    color: var(--buy-from);
+}
+
+/* ─── Content Card ─── */
+.content-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+
+.card-header h3 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+    margin-bottom: 5px;
+}
+
+.price-large {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0;
+    display: block;
+}
+
+.change-tag {
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+.change-tag.positive {
+    background: rgba(5, 150, 105, 0.1);
+    color: var(--up);
+}
+
+.change-tag.negative {
+    background: rgba(225, 29, 72, 0.1);
+    color: var(--down);
+}
+
+.chart-container {
+    height: 200px;
+    width: 100%;
+}
+
+/* ─── Time Tabs ─── */
+.time-tabs {
+    display: flex;
+    gap: 4px;
+    margin-top: 14px;
+    justify-content: center;
+}
+
+.time-tab {
+    padding: 5px 12px;
+    border: none;
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-family: 'Albert Sans', sans-serif;
+    letter-spacing: 0.02em;
+}
+
+.time-tab.active {
+    background: var(--ink);
+    color: white;
+}
+
+/* ─── Order Section ─── */
+.order-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.input-container {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 0 16px;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-container:focus-within {
+    border-color: var(--buy-from);
+    box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.1);
+}
+
+.input-prefix {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ink-muted);
+    margin-right: 4px;
+    user-select: none;
+}
+
+.input-container input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 16px 0;
+    color: var(--ink);
+    font-size: 1.5rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    outline: none;
+}
+
+.input-container input::placeholder {
+    color: rgba(107, 114, 128, 0.38);
+    font-size: 0.95rem;
+    font-weight: 500;
+    font-family: 'Albert Sans', sans-serif;
+}
+
+.action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.btn {
+    padding: 18px;
+    border-radius: 16px;
+    border: none;
+    font-weight: 700;
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    font-family: 'Albert Sans', sans-serif;
+    letter-spacing: 0.01em;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-buy {
+    background: linear-gradient(135deg, var(--buy-from), var(--buy-to));
+    color: white;
+    box-shadow: 0 6px 20px rgba(109, 40, 217, 0.38);
+}
+
+.btn-buy:hover { box-shadow: 0 8px 28px rgba(109, 40, 217, 0.5); }
+
+.btn-sell {
+    background: linear-gradient(135deg, var(--sell-from), var(--sell-to));
+    color: white;
+    box-shadow: 0 6px 20px rgba(225, 29, 72, 0.34);
+}
+
+.btn-sell:hover { box-shadow: 0 8px 28px rgba(225, 29, 72, 0.46); }
+
+/* ─── Multi Grid ─── */
+.multi-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.asset-card-small {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+}
+
+.asset-card-small:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.asset-card-small.active {
+    border-color: var(--buy-from);
+    box-shadow: 0 0 0 2px rgba(109, 40, 217, 0.2), var(--shadow);
+}
+
+.card-small-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.small-asset-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--ink);
+}
+
+.asset-icon-sm {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 0.76rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.asset-icon-sm.sp500 { background: linear-gradient(135deg, #60A5FA, #1D4ED8); }
+.asset-icon-sm.fx    { background: linear-gradient(135deg, #34D399, #059669); }
+.asset-icon-sm.btc   { background: linear-gradient(135deg, #FBBF24, #D97706); }
+
+.sm-price {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.sm-chart-container { height: 80px; }
+
+/* ─── Asset Info (multi) ─── */
+.asset-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(109, 40, 217, 0.04);
+    border: 1px solid rgba(109, 40, 217, 0.08);
+    border-radius: 12px;
+}
+
+.mode-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+}
+
+.price-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+/* ─── History View ─── */
+.chart-container-large {
+    height: 270px;
+    margin-top: 0;
+    width: 100%;
+}
+
+/* 指標グリッド */
+.history-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: fadeSlideUp 0.35s ease both;
+}
+
+.metric-card:nth-child(1) { animation-delay: 0ms; }
+.metric-card:nth-child(2) { animation-delay: 55ms; }
+.metric-card:nth-child(3) { animation-delay: 110ms; }
+.metric-card:nth-child(4) { animation-delay: 165ms; }
+
+/* 総資産カード：グラデーション */
+.metric-main {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #4338CA 0%, #7C3AED 100%);
+    border-color: transparent;
+    box-shadow: 0 6px 20px rgba(109, 40, 217, 0.28);
+}
+
+.metric-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.metric-main .metric-label {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.metric-value-lg {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0;
+}
+
+.metric-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0;
+}
+
+.metric-sub {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+}
+
+.metric-value.metric-up  { color: var(--up); }
+.metric-value.metric-down { color: var(--down); }
+.pnl-up   { color: var(--up); }
+.pnl-up   .metric-sub { color: var(--up); }
+.pnl-down  { color: var(--down); }
+.pnl-down  .metric-sub { color: var(--down); }
+
+/* チャートパネル */
+.history-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    animation: fadeSlideUp 0.35s 0.08s ease both;
+}
+
+/* 期間タブ */
+.h-time-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.h-time-tab {
+    padding: 5px 13px;
+    border: none;
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-family: 'Albert Sans', sans-serif;
+    letter-spacing: 0.02em;
+}
+
+.h-time-tab.active {
+    background: var(--ink);
+    color: white;
+}
+
+/* カスタム凡例 */
+.history-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.total-dot  { background: #4338CA; box-shadow: 0 0 6px rgba(67,56,202,0.55); }
+.stock-dot  { background: #3b82f6; }
+.fx-dot     { background: #8b5cf6; }
+.crypto-dot { background: #f59e0b; }
+
+/* フェードイン */
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Bottom Nav ─── */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 460px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 10px 16px 22px;
+    box-shadow: 0 -8px 32px rgba(91, 33, 182, 0.09);
+    z-index: 100;
+}
+
+.nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    border: none;
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: 0.65rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 0;
+    border-radius: 10px;
+    transition: all 0.2s;
+    font-family: 'Albert Sans', sans-serif;
+}
+
+.nav-btn.active {
+    color: var(--buy-from);
+}
+
+/* ─── Toast ─── */
+.toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: white;
+    padding: 11px 20px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.83rem;
+    font-weight: 600;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+    z-index: 1000;
+    white-space: nowrap;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast.hidden {
+    transform: translateX(-50%) translateY(-80px);
+    opacity: 0;
+}
+
+/* ─── Utility ─── */
+.hidden { display: none !important; }
+
+/* ════════════════════════════════
+   Desktop Layout  (≥ 900px)
+════════════════════════════════ */
+@media (min-width: 900px) {
+
+    body {
+        align-items: stretch;
+    }
+
+    /* ── App Shell: 横並び ── */
+    .app-shell {
+        max-width: 1200px;
+        flex-direction: row;
+        align-items: stretch;
+        padding-bottom: 0;
+        min-height: 100vh;
+        overflow-x: visible;
+        box-shadow: 0 0 60px rgba(91, 33, 182, 0.12);
+        background: var(--surface);
+    }
+
+    /* ── 左サイドバー (ヒーローカード) ── */
+    .hero-card {
+        width: 320px;
+        flex-shrink: 0;
+        min-height: 100vh;
+        padding: 48px 24px 40px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        border-radius: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hero-top {
+        margin-bottom: 28px;
+    }
+
+    .asset-breakdown {
+        flex: 1;
+        gap: 10px;
+    }
+
+    /* ── メインコンテンツ ── */
+    .trading-area {
+        flex: 1;
+        min-width: 0;
+        padding: 32px 32px 40px;
+        overflow-y: auto;
+        max-height: 100vh;
+    }
+
+    /* ── ボトムナビ非表示 ── */
+    .bottom-nav { display: none; }
+
+    /* ── チャートビュー: 縦並び（チャート大きく、下に注文行） ── */
+    #single-view {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    #single-view .chart-container {
+        height: 420px;
+    }
+
+    /* 注文エリアをカード化して横一列に */
+    #single-view .order-section {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 16px 20px;
+        box-shadow: var(--shadow);
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+    }
+
+    #single-view .input-container {
+        flex: 1;
+    }
+
+    #single-view .action-buttons {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        flex-shrink: 0;
+        width: 260px;
+    }
+
+    #single-view .action-buttons .btn {
+        flex: 1;
+        padding: 14px 0;
+    }
+
+    /* ── 全表示: 縦並び ── */
+    .multi-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* ── チャート高さをPC向けに拡大 ── */
+    .chart-container       { height: 280px; }
+    .chart-container-large { height: 340px; }
+
+    /* ── 資産推移: 指標を4列に ── */
+    .history-metrics {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    .metric-main {
+        grid-column: auto;
+        background: linear-gradient(135deg, #4338CA 0%, #7C3AED 100%);
+    }
+
+    /* ── タブをPC幅に合わせてコンパクトに ── */
+    .mode-selector,
+    .view-tabs {
+        margin-bottom: 0;
+    }
+}
+
+/* ════════════════════════════════
+   Wide Desktop  (≥ 1200px)
+════════════════════════════════ */
+@media (min-width: 1200px) {
+    .hero-card   { width: 360px; }
+
+    #single-view {
+        grid-template-columns: 1fr 320px;
+    }
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>縦書きリーダー</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+  <!-- ── 初期画面 ── -->
+  <div id="uploadScreen" class="upload-screen">
+    <div class="upload-card">
+      <div class="upload-icon">📚</div>
+      <h1 class="upload-title">縦書きリーダー</h1>
+      <p class="upload-desc">Markdownファイル、またはフォルダを選択してください</p>
+      <div class="upload-btns">
+        <label class="upload-btn" for="fileInput">
+          ファイルを選択
+          <input type="file" id="fileInput" accept=".md,.png,.jpg,.jpeg,.gif,.webp,.svg,.bmp" multiple style="display:none" />
+        </label>
+        <label class="upload-btn upload-btn--secondary" for="folderInput">
+          フォルダを選択
+          <input type="file" id="folderInput" webkitdirectory multiple style="display:none" />
+        </label>
+      </div>
+      <p class="upload-note">※ .md ファイルのみ読み込まれます</p>
+    </div>
+  </div>
+
+  <!-- ── リーダー画面 ── -->
+  <div id="readerScreen" class="reader-screen hidden">
+
+    <!-- トップバー -->
+    <header class="topbar">
+      <button class="topbar-btn" id="sidebarToggle" title="目次">☰</button>
+      <span class="topbar-title" id="topbarTitle"></span>
+      <div class="topbar-controls">
+        <button class="topbar-btn" id="fontSmall" title="文字を小さく">A-</button>
+        <button class="topbar-btn" id="fontLarge" title="文字を大きく">A+</button>
+        <button class="topbar-btn theme-btn" data-theme="light" title="ライト">☀</button>
+        <button class="topbar-btn theme-btn" data-theme="sepia" title="セピア">📜</button>
+        <button class="topbar-btn theme-btn" data-theme="dark" title="ダーク">🌙</button>
+        <button class="topbar-btn" id="backBtn" title="フォルダ選択に戻る">✕</button>
+      </div>
+    </header>
+
+    <div class="reader-body">
+
+      <!-- サイドバー（目次） -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">目次</div>
+        <ul class="file-list" id="fileList"></ul>
+      </aside>
+
+      <!-- 縦書き本文エリア -->
+      <main class="reader-main" id="readerMain">
+        <div class="book-page" id="bookPage"></div>
+      </main>
+
+      <!-- ページナビ -->
+      <div class="page-nav">
+        <button class="nav-btn" id="prevPage" title="前のページ">›</button>
+        <span class="page-info" id="pageInfo"></span>
+        <button class="nav-btn" id="nextPage" title="次のページ">‹</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

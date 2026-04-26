@@ -157,6 +157,43 @@ html {
   box-shadow: var(--shadow-hover);
 }
 
+/* ブックマークボタン */
+.card__bookmark {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #cbd5e1;
+  line-height: 1;
+  padding: 2px 4px;
+  transition: color var(--transition), transform var(--transition);
+}
+
+.card__bookmark:hover {
+  color: #f59e0b;
+  transform: scale(1.15);
+}
+
+.card__bookmark--active {
+  color: #f59e0b;
+}
+
+/* ブックマークフィルターボタン */
+.filter__btn--bookmark {
+  border-color: #f59e0b;
+  color: #b45309;
+}
+
+.filter__btn--bookmark:hover,
+.filter__btn--bookmark.filter__btn--active {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: #fff;
+}
+
 /* 出典ラベル */
 .card__source {
   position: absolute;

@@ -66,6 +66,10 @@ COL_MAP = {
 def fetch_team(year: int, team_ja: str, code: str) -> pd.DataFrame:
     url = f"https://npb.jp/bis/{year}/stats/idb1_{code}.html"
     r = requests.get(url, headers=HEADERS, timeout=15)
+    # 404 の場合、コードに "s" を付けて再試行（例: 2015-2017 のオリックス b→bs）
+    if r.status_code == 404:
+        alt_url = f"https://npb.jp/bis/{year}/stats/idb1_{code}s.html"
+        r = requests.get(alt_url, headers=HEADERS, timeout=15)
     r.raise_for_status()
 
     soup = BeautifulSoup(r.content, "lxml")
