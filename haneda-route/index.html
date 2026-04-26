@@ -106,7 +106,7 @@
       border-radius: 14px;
       padding: 12px 6px 10px;
       text-align: center;
-      cursor: default;
+      cursor: pointer;
       transition: transform 0.15s, border-color 0.15s;
     }
     .day-card:hover { transform: translateY(-3px); }
@@ -114,6 +114,7 @@
     .day-card.new  { border-color: #3b82f6; background: rgba(59,130,246,.08); }
     .day-card.old  { border-color: #22c55e; background: rgba(34,197,94,.06); }
     .day-card.today-marker { outline: 2px solid #f59e0b; outline-offset: 2px; }
+    .day-card.selected     { outline: 2px solid #f59e0b; outline-offset: 2px; }
 
     .dc-today  { font-size: 0.6rem; color: #fbbf24; font-weight: 700; margin-bottom: 2px; }
     .dc-day    { font-size: 0.7rem; color: #64748b; }
@@ -147,6 +148,74 @@
     .conf-bar.old { background: linear-gradient(90deg, #22c55e, #4ade80); }
     .conf-pct { font-size: 0.8rem; font-weight: 700; white-space: nowrap; }
 
+    /* ── Hourly breakdown ── */
+    .hourly-section {
+      margin-top: 22px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding-top: 18px;
+    }
+    .hourly-label {
+      font-size: 0.7rem;
+      color: #64748b;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      text-align: center;
+    }
+    .hourly-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+    .hour-slot {
+      background: rgba(255,255,255,.03);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .hour-slot.new { border-color: #3b82f6; background: rgba(59,130,246,.1); }
+    .hour-slot.old { border-color: #22c55e; background: rgba(34,197,94,.08); }
+    .hour-slot.now { outline: 2px solid #f59e0b; outline-offset: 2px; }
+
+    .hs-time { font-size: 0.72rem; color: #94a3b8; margin-bottom: 5px; font-weight: 600; }
+    .hs-now-badge {
+      display: inline-block;
+      font-size: 0.55rem;
+      color: #fbbf24;
+      font-weight: 700;
+      margin-left: 3px;
+    }
+    .hs-route {
+      font-size: 0.62rem; font-weight: 800;
+      padding: 2px 6px; border-radius: 10px;
+      display: inline-block; margin-bottom: 6px;
+    }
+    .hour-slot.new .hs-route { background: rgba(59,130,246,.25); color: #93c5fd; }
+    .hour-slot.old .hs-route { background: rgba(34,197,94,.2); color: #86efac; }
+    .hs-arrow { font-size: 1.3rem; line-height: 1; margin-bottom: 4px; }
+    .hs-dir { font-size: 0.6rem; color: #94a3b8; line-height: 1.5; }
+    .hs-spd { font-size: 0.6rem; color: #64748b; margin-top: 2px; }
+
+    /* ── Detail panel (click a day card) ── */
+    .detail-panel {
+      display: none;
+      background: #141e35;
+      border: 1px solid #2d3f60;
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 12px;
+    }
+    .detail-panel.active { display: block; }
+    .detail-date {
+      font-size: 0.82rem;
+      color: #94a3b8;
+      font-weight: 700;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .detail-panel .hourly-section { border-top: none; margin-top: 0; padding-top: 0; }
+
     /* ── Footer ── */
     footer {
       font-size: 0.72rem;
@@ -171,6 +240,8 @@
       .days-grid { grid-template-columns: repeat(4, 1fr); }
       .dc-wind { display: none; }
       header h1 { font-size: 1.4rem; }
+      .hourly-grid { gap: 6px; }
+      .hs-dir { display: none; }
     }
     @media (max-width: 380px) {
       .days-grid { grid-template-columns: repeat(3, 1fr); }
@@ -193,14 +264,15 @@
 
   <footer>
     ※ 気象データ（風向・風速）に基づく推定であり、実際の管制運用を保証するものではありません。<br>
-    ※ データソース: <a href="https://open-meteo.com/" target="_blank" style="color:#475569">Open-Meteo</a>（無料・APIキー不要）
+    ※ データソース: <a href="https://open-meteo.com/" target="_blank" style="color:#475569">Open-Meteo</a>（無料・APIキー不要）<br>
+    ※ 日カードをタップすると時間別の詳細を表示します。
   </footer>
 </div>
 
 <script>
   const LAT = 35.5494;
   const LON = 139.7798;
-  const TARGET_HOURS = [15, 16, 17, 18, 19]; // 15:00〜19:00
+  const TARGET_HOURS = [15, 16, 17, 18, 19];
 
   /* ── 円形平均（風向用） ── */
   function circularMean(angles) {
@@ -223,16 +295,15 @@
 
   /* 信頼度: 南風中心(180°)との角度差と風速から算出 */
   function confidence(dir, spd) {
-    const diff = Math.abs(((dir - 180 + 180 + 360) % 360) - 180); // 0〜180
-    const dirScore = Math.max(0, 1 - diff / 45); // 45°以内で1→0
+    const diff = Math.abs(((dir - 180 + 180 + 360) % 360) - 180);
+    const dirScore = Math.max(0, 1 - diff / 45);
     const spdScore = Math.min(1, spd / 6);
-    return Math.round(Math.max(dirScore, 1 - dirScore) * spdScore * 60 + 40); // 40〜100
+    return Math.round(Math.max(dirScore, 1 - dirScore) * spdScore * 60 + 40);
   }
 
   /* 風向 → 矢印（風が吹いてくる方向を指す） */
   function windArrow(deg) {
     const arrows = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];
-    // deg=180(南風) → 風は北へ向かう → ↑
     const moveDeg = (deg + 180) % 360;
     return arrows[Math.round(moveDeg / 45) % 8];
   }
@@ -268,7 +339,7 @@
     return res.json();
   }
 
-  /* ── データ整形 ── */
+  /* ── データ整形（時間別データも保持） ── */
   function processData(data) {
     const times  = data.hourly.time;
     const dirs   = data.hourly.wind_direction_10m;
@@ -279,26 +350,60 @@
       const [dateStr, timeStr] = t.split('T');
       const hour = parseInt(timeStr, 10);
       if (TARGET_HOURS.includes(hour)) {
-        if (!byDate[dateStr]) byDate[dateStr] = { dirs: [], speeds: [] };
+        if (!byDate[dateStr]) byDate[dateStr] = { dirs: [], speeds: [], hours: [] };
         byDate[dateStr].dirs.push(dirs[i]);
         byDate[dateStr].speeds.push(speeds[i]);
+        byDate[dateStr].hours.push({ hour, dir: Math.round(dirs[i]), spd: Math.round(speeds[i] * 10) / 10 });
       }
     });
 
     return Object.entries(byDate)
-      .sort((a,b) => a[0].localeCompare(b[0]))
+      .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([dateStr, v]) => {
-        const dir  = circularMean(v.dirs);
-        const spd  = meanSpeed(v.speeds);
+        const dir   = circularMean(v.dirs);
+        const spd   = meanSpeed(v.speeds);
         const route = judgeRoute(dir, spd);
+        const hours = v.hours
+          .sort((a, b) => a.hour - b.hour)
+          .map(h => ({
+            hour:    h.hour,
+            dir:     h.dir,
+            spd:     h.spd,
+            route:   judgeRoute(h.dir, h.spd),
+            compass: compassLabel(h.dir),
+            arrow:   windArrow(h.dir),
+          }));
         return {
           date: dateStr,
           dir, spd, route,
           compass: compassLabel(dir),
           arrow:   windArrow(dir),
           conf:    confidence(dir, spd),
+          hours,
         };
       });
+  }
+
+  /* ── 時間別グリッドHTML ── */
+  function hourlyGridHTML(hours, isToday) {
+    const nowHour = new Date().getHours();
+    return `
+      <div class="hourly-section">
+        <div class="hourly-label">1時間ごとの風向き・ルート</div>
+        <div class="hourly-grid">
+          ${hours.map(h => {
+            const isCurrent = isToday && h.hour === nowHour;
+            return `
+              <div class="hour-slot ${h.route}${isCurrent ? ' now' : ''}">
+                <div class="hs-time">${h.hour}:00${isCurrent ? '<span class="hs-now-badge">NOW</span>' : ''}</div>
+                <div class="hs-route">${h.route === 'new' ? '新ルート' : '旧ルート'}</div>
+                <div class="hs-arrow">${h.arrow}</div>
+                <div class="hs-dir">${h.compass}<br>${h.dir}°</div>
+                <div class="hs-spd">${h.spd} m/s</div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
   }
 
   /* ── 日カードHTML ── */
@@ -306,7 +411,7 @@
     const rc = item.route;
     const routeLabel = rc === 'new' ? '新ルート' : '旧ルート';
     return `
-      <div class="day-card ${rc}${isToday ? ' today-marker' : ''}">
+      <div class="day-card ${rc}${isToday ? ' today-marker' : ''}" data-date="${item.date}">
         ${isToday ? '<div class="dc-today">TODAY</div>' : ''}
         <div class="dc-day">${dayName(item.date)}</div>
         <div class="dc-date">${monthDay(item.date)}</div>
@@ -318,21 +423,22 @@
 
   /* ── メイン描画 ── */
   function render(items) {
-    const todayStr = ymd(new Date());
+    const todayStr  = ymd(new Date());
     const todayItem = items.find(i => i.date === todayStr);
-    const pastItems = items.filter(i => i.date < todayStr).slice(-14);
+    const pastItems   = items.filter(i => i.date < todayStr).slice(-14);
     const futureItems = items.filter(i => i.date >= todayStr).slice(0, 14);
 
-    /* ヒーローカード */
+    const itemMap = Object.fromEntries(items.map(i => [i.date, i]));
+
+    /* ── ヒーローカード（今日） ── */
     let heroHTML = '';
     if (todayItem) {
-      const rc = todayItem.route;
+      const rc    = todayItem.route;
       const label = rc === 'new' ? '🔵 新ルート' : '🟢 旧ルート';
       const desc  = rc === 'new'
         ? '南風のため 15:00〜19:00 は都心上空を経由する新ルート運用の可能性が高いです。'
         : '北風または条件不一致のため、旧ルート運用の可能性が高いです。';
       const confPct = todayItem.conf;
-      const confClass = rc;
       heroHTML = `
         <div class="hero ${rc}">
           <div class="hero-label">今日の予測（15:00〜19:00）</div>
@@ -345,30 +451,69 @@
           <div class="confidence">
             <span class="conf-label">推定信頼度</span>
             <div class="conf-bar-wrap">
-              <div class="conf-bar ${confClass}" style="width:${confPct}%"></div>
+              <div class="conf-bar ${rc}" style="width:${confPct}%"></div>
             </div>
             <span class="conf-pct">${confPct}%</span>
           </div>
+          ${todayItem.hours.length ? hourlyGridHTML(todayItem.hours, true) : ''}
         </div>`;
     }
 
+    /* ── 日カードセクション ── */
     const pastHTML = pastItems.length ? `
       <div class="section">
         <div class="section-title">📅 過去14日間の実績</div>
-        <div class="days-grid">
+        <div class="days-grid" id="past-grid">
           ${pastItems.map(i => dayCardHTML(i, false)).join('')}
         </div>
+        <div class="detail-panel" id="past-detail"></div>
       </div>` : '';
 
     const futureHTML = futureItems.length ? `
       <div class="section">
         <div class="section-title">🔮 今後14日間の予測</div>
-        <div class="days-grid">
+        <div class="days-grid" id="future-grid">
           ${futureItems.map(i => dayCardHTML(i, i.date === todayStr)).join('')}
         </div>
+        <div class="detail-panel" id="future-detail"></div>
       </div>` : '';
 
     document.getElementById('app').innerHTML = heroHTML + pastHTML + futureHTML;
+
+    /* ── 日カードクリック → 時間別パネル表示 ── */
+    ['past-grid', 'future-grid'].forEach(gridId => {
+      const grid = document.getElementById(gridId);
+      if (!grid) return;
+      const panel = grid.nextElementSibling; // .detail-panel
+
+      grid.addEventListener('click', e => {
+        const card = e.target.closest('.day-card[data-date]');
+        if (!card) return;
+        const dateStr = card.dataset.date;
+        const item = itemMap[dateStr];
+        if (!item || !item.hours.length) return;
+
+        /* 同じカードを再クリックで閉じる */
+        if (panel.dataset.date === dateStr && panel.classList.contains('active')) {
+          panel.classList.remove('active');
+          panel.dataset.date = '';
+          card.classList.remove('selected');
+          return;
+        }
+
+        /* 選択状態をリセット */
+        grid.querySelectorAll('.day-card.selected').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+
+        const isToday = dateStr === todayStr;
+        panel.dataset.date = dateStr;
+        panel.classList.add('active');
+        panel.innerHTML = `
+          <div class="detail-date">${monthDay(dateStr)}（${dayName(dateStr)}）の時間別予測</div>
+          ${hourlyGridHTML(item.hours, isToday)}
+        `;
+      });
+    });
   }
 
   /* ── エントリ ── */
