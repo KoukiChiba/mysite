@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>羽田 着陸ルート予測</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+      background: #0b1120;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .container { max-width: 760px; margin: 0 auto; }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 28px 0 36px;
+    }
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    header .sub {
+      color: #64748b;
+      font-size: 0.8rem;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    /* ── Today hero card ── */
+    .hero {
+      border-radius: 20px;
+      padding: 32px 24px;
+      margin-bottom: 36px;
+      text-align: center;
+      border: 1px solid transparent;
+      transition: border-color 0.3s;
+    }
+    .hero.new {
+      background: linear-gradient(140deg, #0d2045 0%, #0d1f3c 100%);
+      border-color: #3b82f6;
+    }
+    .hero.old {
+      background: linear-gradient(140deg, #0a2017 0%, #0d1f17 100%);
+      border-color: #22c55e;
+    }
+    .hero.unknown {
+      background: #1e293b;
+      border-color: #334155;
+    }
+
+    .hero-label { font-size: 0.8rem; color: #94a3b8; margin-bottom: 12px; }
+
+    .hero-badge {
+      display: inline-block;
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      padding: 10px 32px;
+      border-radius: 50px;
+      margin-bottom: 16px;
+    }
+    .hero.new .hero-badge  { background: rgba(59,130,246,.15); color: #93c5fd; border: 2px solid #3b82f6; }
+    .hero.old .hero-badge  { background: rgba(34,197,94,.12);  color: #86efac; border: 2px solid #22c55e; }
+    .hero.unknown .hero-badge { background: #334155; color: #94a3b8; border: 2px solid #475569; }
+
+    .hero-desc { font-size: 0.85rem; color: #94a3b8; margin-bottom: 18px; line-height: 1.6; }
+
+    .hero-wind {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      font-size: 0.88rem;
+      color: #7dd3fc;
+    }
+    .hero-wind span { display: flex; align-items: center; gap: 5px; }
+
+    /* ── Sections ── */
+    .section { margin-bottom: 32px; }
+    .section-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 12px;
+    }
+
+    /* ── Day cards grid ── */
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+
+    .day-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 12px 6px 10px;
+      text-align: center;
+      cursor: default;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .day-card:hover { transform: translateY(-3px); }
+
+    .day-card.new  { border-color: #3b82f6; background: rgba(59,130,246,.08); }
+    .day-card.old  { border-color: #22c55e; background: rgba(34,197,94,.06); }
+    .day-card.today-marker { outline: 2px solid #f59e0b; outline-offset: 2px; }
+
+    .dc-today  { font-size: 0.6rem; color: #fbbf24; font-weight: 700; margin-bottom: 2px; }
+    .dc-day    { font-size: 0.7rem; color: #64748b; }
+    .dc-date   { font-size: 0.82rem; font-weight: 700; margin: 3px 0 6px; }
+    .dc-route  {
+      font-size: 0.68rem; font-weight: 800;
+      padding: 2px 6px; border-radius: 20px; margin-bottom: 6px;
+      display: inline-block;
+    }
+    .day-card.new .dc-route  { background: rgba(59,130,246,.2); color: #60a5fa; }
+    .day-card.old .dc-route  { background: rgba(34,197,94,.2);  color: #4ade80; }
+    .day-card:not(.new):not(.old) .dc-route { background: #334155; color: #64748b; }
+
+    .dc-arrow  { font-size: 1.1rem; line-height: 1; margin-bottom: 4px; }
+    .dc-wind   { font-size: 0.62rem; color: #475569; line-height: 1.4; }
+
+    /* ── Confidence bar ── */
+    .confidence {
+      margin-top: 20px;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .conf-label { font-size: 0.8rem; color: #64748b; white-space: nowrap; }
+    .conf-bar-wrap { flex: 1; background: #334155; border-radius: 6px; height: 8px; overflow: hidden; }
+    .conf-bar { height: 100%; border-radius: 6px; transition: width 0.6s ease; }
+    .conf-bar.new { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .conf-bar.old { background: linear-gradient(90deg, #22c55e, #4ade80); }
+    .conf-pct { font-size: 0.8rem; font-weight: 700; white-space: nowrap; }
+
+    /* ── Footer ── */
+    footer {
+      font-size: 0.72rem;
+      color: #334155;
+      text-align: center;
+      margin-top: 28px;
+      line-height: 1.8;
+      padding-bottom: 24px;
+    }
+
+    /* ── Loading / Error ── */
+    .state-msg {
+      text-align: center;
+      color: #475569;
+      padding: 60px 20px;
+      font-size: 0.9rem;
+      line-height: 2;
+    }
+    .state-msg.error { color: #f87171; }
+
+    @media (max-width: 560px) {
+      .days-grid { grid-template-columns: repeat(4, 1fr); }
+      .dc-wind { display: none; }
+      header h1 { font-size: 1.4rem; }
+    }
+    @media (max-width: 380px) {
+      .days-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>✈️ 羽田 着陸ルート予測</h1>
+    <p class="sub">
+      南風運用（15:00〜19:00）時の新ルート判定 ／ 気象データ: Open-Meteo<br>
+      南風（135°〜225°）+ 風速 ≥ 1.5 m/s → <strong>新ルート</strong>、それ以外 → <strong>旧ルート</strong>
+    </p>
+  </header>
+
+  <div id="app">
+    <div class="state-msg">気象データを取得中…</div>
+  </div>
+
+  <footer>
+    ※ 気象データ（風向・風速）に基づく推定であり、実際の管制運用を保証するものではありません。<br>
+    ※ データソース: <a href="https://open-meteo.com/" target="_blank" style="color:#475569">Open-Meteo</a>（無料・APIキー不要）
+  </footer>
+</div>
+
+<script>
+  const LAT = 35.5494;
+  const LON = 139.7798;
+  const TARGET_HOURS = [15, 16, 17, 18, 19]; // 15:00〜19:00
+
+  /* ── 円形平均（風向用） ── */
+  function circularMean(angles) {
+    const toRad = a => a * Math.PI / 180;
+    const sinMean = angles.reduce((s, a) => s + Math.sin(toRad(a)), 0) / angles.length;
+    const cosMean = angles.reduce((s, a) => s + Math.cos(toRad(a)), 0) / angles.length;
+    let m = Math.atan2(sinMean, cosMean) * 180 / Math.PI;
+    return Math.round((m + 360) % 360);
+  }
+
+  function meanSpeed(arr) {
+    return Math.round(arr.reduce((s, v) => s + v, 0) / arr.length * 10) / 10;
+  }
+
+  /* 南風 = 135°〜225°, 風速 ≥ 1.5 m/s */
+  function judgeRoute(dir, spd) {
+    if (dir >= 135 && dir <= 225 && spd >= 1.5) return 'new';
+    return 'old';
+  }
+
+  /* 信頼度: 南風中心(180°)との角度差と風速から算出 */
+  function confidence(dir, spd) {
+    const diff = Math.abs(((dir - 180 + 180 + 360) % 360) - 180); // 0〜180
+    const dirScore = Math.max(0, 1 - diff / 45); // 45°以内で1→0
+    const spdScore = Math.min(1, spd / 6);
+    return Math.round(Math.max(dirScore, 1 - dirScore) * spdScore * 60 + 40); // 40〜100
+  }
+
+  /* 風向 → 矢印（風が吹いてくる方向を指す） */
+  function windArrow(deg) {
+    const arrows = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];
+    // deg=180(南風) → 風は北へ向かう → ↑
+    const moveDeg = (deg + 180) % 360;
+    return arrows[Math.round(moveDeg / 45) % 8];
+  }
+
+  function compassLabel(deg) {
+    const d = ['北','北北東','北東','東北東','東','東南東','南東','南南東',
+               '南','南南西','南西','西南西','西','西北西','北西','北北西'];
+    return d[Math.round(deg / 22.5) % 16];
+  }
+
+  function ymd(date) {
+    return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+  }
+  function pad(n) { return String(n).padStart(2,'0'); }
+  function dayName(date) { return '日月火水木金土'[new Date(date+'T12:00:00+09:00').getDay()]; }
+  function monthDay(date) {
+    const d = new Date(date+'T12:00:00+09:00');
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  }
+
+  /* ── API取得 ── */
+  async function fetchWeather() {
+    const url = [
+      'https://api.open-meteo.com/v1/forecast',
+      `?latitude=${LAT}&longitude=${LON}`,
+      '&hourly=wind_direction_10m,wind_speed_10m',
+      '&timezone=Asia%2FTokyo',
+      '&forecast_days=14',
+      '&past_days=14'
+    ].join('');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+
+  /* ── データ整形 ── */
+  function processData(data) {
+    const times  = data.hourly.time;
+    const dirs   = data.hourly.wind_direction_10m;
+    const speeds = data.hourly.wind_speed_10m;
+
+    const byDate = {};
+    times.forEach((t, i) => {
+      const [dateStr, timeStr] = t.split('T');
+      const hour = parseInt(timeStr, 10);
+      if (TARGET_HOURS.includes(hour)) {
+        if (!byDate[dateStr]) byDate[dateStr] = { dirs: [], speeds: [] };
+        byDate[dateStr].dirs.push(dirs[i]);
+        byDate[dateStr].speeds.push(speeds[i]);
+      }
+    });
+
+    return Object.entries(byDate)
+      .sort((a,b) => a[0].localeCompare(b[0]))
+      .map(([dateStr, v]) => {
+        const dir  = circularMean(v.dirs);
+        const spd  = meanSpeed(v.speeds);
+        const route = judgeRoute(dir, spd);
+        return {
+          date: dateStr,
+          dir, spd, route,
+          compass: compassLabel(dir),
+          arrow:   windArrow(dir),
+          conf:    confidence(dir, spd),
+        };
+      });
+  }
+
+  /* ── 日カードHTML ── */
+  function dayCardHTML(item, isToday) {
+    const rc = item.route;
+    const routeLabel = rc === 'new' ? '新ルート' : '旧ルート';
+    return `
+      <div class="day-card ${rc}${isToday ? ' today-marker' : ''}">
+        ${isToday ? '<div class="dc-today">TODAY</div>' : ''}
+        <div class="dc-day">${dayName(item.date)}</div>
+        <div class="dc-date">${monthDay(item.date)}</div>
+        <div class="dc-route">${routeLabel}</div>
+        <div class="dc-arrow">${item.arrow}</div>
+        <div class="dc-wind">${item.compass}<br>${item.spd} m/s</div>
+      </div>`;
+  }
+
+  /* ── メイン描画 ── */
+  function render(items) {
+    const todayStr = ymd(new Date());
+    const todayItem = items.find(i => i.date === todayStr);
+    const pastItems = items.filter(i => i.date < todayStr).slice(-14);
+    const futureItems = items.filter(i => i.date >= todayStr).slice(0, 14);
+
+    /* ヒーローカード */
+    let heroHTML = '';
+    if (todayItem) {
+      const rc = todayItem.route;
+      const label = rc === 'new' ? '🔵 新ルート' : '🟢 旧ルート';
+      const desc  = rc === 'new'
+        ? '南風のため 15:00〜19:00 は都心上空を経由する新ルート運用の可能性が高いです。'
+        : '北風または条件不一致のため、旧ルート運用の可能性が高いです。';
+      const confPct = todayItem.conf;
+      const confClass = rc;
+      heroHTML = `
+        <div class="hero ${rc}">
+          <div class="hero-label">今日の予測（15:00〜19:00）</div>
+          <div class="hero-badge">${label}</div>
+          <div class="hero-desc">${desc}</div>
+          <div class="hero-wind">
+            <span>${todayItem.arrow} ${todayItem.compass}</span>
+            <span>💨 ${todayItem.dir}° ／ ${todayItem.spd} m/s</span>
+          </div>
+          <div class="confidence">
+            <span class="conf-label">推定信頼度</span>
+            <div class="conf-bar-wrap">
+              <div class="conf-bar ${confClass}" style="width:${confPct}%"></div>
+            </div>
+            <span class="conf-pct">${confPct}%</span>
+          </div>
+        </div>`;
+    }
+
+    const pastHTML = pastItems.length ? `
+      <div class="section">
+        <div class="section-title">📅 過去14日間の実績</div>
+        <div class="days-grid">
+          ${pastItems.map(i => dayCardHTML(i, false)).join('')}
+        </div>
+      </div>` : '';
+
+    const futureHTML = futureItems.length ? `
+      <div class="section">
+        <div class="section-title">🔮 今後14日間の予測</div>
+        <div class="days-grid">
+          ${futureItems.map(i => dayCardHTML(i, i.date === todayStr)).join('')}
+        </div>
+      </div>` : '';
+
+    document.getElementById('app').innerHTML = heroHTML + pastHTML + futureHTML;
+  }
+
+  /* ── エントリ ── */
+  (async () => {
+    try {
+      const data  = await fetchWeather();
+      const items = processData(data);
+      render(items);
+    } catch (e) {
+      document.getElementById('app').innerHTML = `
+        <div class="state-msg error">
+          データの取得に失敗しました。<br>
+          ネットワーク接続を確認して再読み込みしてください。<br>
+          <small style="color:#6b7280">${e.message}</small>
+        </div>`;
+    }
+  })();
+</script>
+</body>
+</html>

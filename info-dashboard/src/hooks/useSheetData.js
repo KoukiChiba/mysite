@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react'
 import { parseCsv, csvToObjects } from '../utils/csvParser'
 
 // 開発時: Vite dev server のプロキシ経由（CORS不要）
-// 本番時: allorigins 公開プロキシ経由
+// 本番時: "ウェブに公開" した pub URL は CORS ヘッダー付きなので直接 fetch
 function resolveUrl(url) {
   if (import.meta.env.DEV) {
     // https://docs.google.com/spreadsheets/... → /sheets-proxy/...
     return url.replace('https://docs.google.com/spreadsheets', '/sheets-proxy')
   }
-  return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+  return url
 }
 
 async function fetchCsv(url) {
