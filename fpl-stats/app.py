@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 from typing import Optional
@@ -157,8 +158,8 @@ if team_filter != "全クラブ" and team_col:
 pos_label = "/".join(pos_filter) if len(pos_filter) < 4 else "全ポジション"
 st.title(f"⚽ FPL Stats Analysis ({season}) — {pos_label}")
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
-    ["📊 成績", "📈 推移", "🏟 クラブ", "🔍 散布図", "📅 GW"]
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+    ["📊 成績", "📈 推移", "🏟 クラブ", "🔍 散布図", "📅 GW", "💬 AIチャット"]
 )
 
 # ════════════════════════════════════════════════
@@ -433,3 +434,69 @@ with tab5:
                     st.dataframe(dp5[show5].reset_index(drop=True), use_container_width=True)
         else:
             st.info("選手名を入力するとGW単位の推移グラフが表示されます。")
+
+# ════════════════════════════════════════════════
+# Tab6: AIチャット
+# ════════════════════════════════════════════════
+with tab6:
+    st.subheader("💬 AIチャット — データについて質問する")
+
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    if not api_key:
+        st.warning("環境変数 `GEMINI_API_KEY` が設定されていません。")
+        st.stop()
+
+    try:
+        from google import genai as _genai
+        _client = _genai.Client(api_key=api_key)
+    except Exception as e:
+        st.error(f"Gemini の初期化に失敗しました: {e}")
+        st.stop()
+
+    ctx_df = df.copy()
+    data_str = ctx_df.to_csv(index=False) if len(ctx_df) <= 200 else ctx_df.head(200).to_csv(index=False)
+    system_prompt = f"""あなたはFantasy Premier League（FPL）の選手データを分析するアシスタントです。
+以下は現在表示中の{season}シーズンの選手データです（{pos_label}・{team_filter}）。
+このデータをもとにユーザーの質問に日本語で答えてください。
+
+```
+{data_str}
+```
+"""
+
+    if "fpl_chat_history" not in st.session_state:
+        st.session_state.fpl_chat_history = []
+
+    for msg in st.session_state.fpl_chat_history:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    if prompt := st.chat_input("例：ポイントが一番高い選手は？　GKのおすすめは？"):
+        st.session_state.fpl_chat_history.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+            with st.spinner("考え中..."):
+                try:
+                    contents = [{"role": "user", "parts": [{"text": system_prompt + "\n\nユーザーの質問: " + prompt}]}]
+                    for h in st.session_state.fpl_chat_history[:-1]:
+                        role = "user" if h["role"] == "user" else "model"
+                        contents.append({"role": role, "parts": [{"text": h["content"]}]})
+                    contents.append({"role": "user", "parts": [{"text": prompt}]})
+
+                    response = _client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=contents,
+                    )
+                    answer = response.text
+                except Exception as e:
+                    answer = f"エラーが発生しました: {e}"
+
+                st.markdown(answer)
+                st.session_state.fpl_chat_history.append({"role": "assistant", "content": answer})
+
+    if st.session_state.fpl_chat_history:
+        if st.button("会話をリセット"):
+            st.session_state.fpl_chat_history = []
+            st.rerun()
