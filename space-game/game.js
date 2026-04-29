@@ -13,6 +13,11 @@ const shipImg = new Image(); shipImg.src = 'assets/ship.png';
 const coinImg = new Image(); coinImg.src = 'assets/coin.png';
 const bgImg = new Image(); bgImg.src = 'assets/bg.png';
 
+// Audio
+const bgm = new Audio('Beyond_the_Seventh_Star.mp3');
+bgm.loop = true;
+let isMuted = false;
+
 // Game state
 let gameRunning = false;
 let score = 0;
@@ -213,6 +218,11 @@ function startGame() {
     gameOverScreen.classList.add('hidden');
     gameInfo.classList.remove('hidden');
     
+    // Start BGM if not muted
+    if (!isMuted) {
+        bgm.play().catch(e => console.log("Audio play failed:", e));
+    }
+    
     requestAnimationFrame(updateGame);
 }
 
@@ -231,3 +241,18 @@ function winGame() {
 
 document.getElementById('start-button').addEventListener('click', startGame);
 document.getElementById('restart-button').addEventListener('click', startGame);
+
+// Music Toggle
+const musicToggle = document.getElementById('music-toggle');
+musicToggle.addEventListener('click', () => {
+    isMuted = !isMuted;
+    if (isMuted) {
+        bgm.pause();
+        musicToggle.innerHTML = '<span>🔇</span>';
+        musicToggle.classList.add('muted');
+    } else {
+        if (gameRunning) bgm.play();
+        musicToggle.innerHTML = '<span>🔊</span>';
+        musicToggle.classList.remove('muted');
+    }
+});
