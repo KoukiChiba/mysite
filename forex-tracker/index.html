@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>為替トラッカー</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #1a2332;
+      min-height: 100vh;
+    }
+
+    /* ─── Header ─────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #1a2332 0%, #243447 100%);
+      color: #fff;
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .header-icon { font-size: 2rem; }
+    .header-text h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.02em; }
+    .header-text p { font-size: 0.8rem; color: #8faac0; margin-top: 0.2rem; }
+
+    /* ─── Layout ─────────────────────────────── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+    /* ─── Period Selector ─────────────────────── */
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .period-selector { display: flex; gap: 0.4rem; }
+    .period-btn {
+      padding: 0.45rem 1.1rem;
+      border: 1.5px solid #cbd5e1;
+      background: #fff;
+      border-radius: 2rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #64748b;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .period-btn.active {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+      box-shadow: 0 2px 6px rgba(37,99,235,0.35);
+    }
+    .period-btn:hover:not(.active) { background: #f1f5f9; border-color: #94a3b8; }
+
+    .timestamp { font-size: 0.78rem; color: #94a3b8; }
+
+    /* ─── Cards Grid ──────────────────────────── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 1rem;
+      padding: 1rem 1rem 0.85rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      border-top: 4px solid #e2e8f0;
+      transition: transform 0.15s, box-shadow 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.1); }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-bottom: 0.6rem;
+    }
+    .card-flag { font-size: 1.4rem; line-height: 1; }
+    .card-name { font-size: 0.78rem; color: #64748b; font-weight: 500; }
+
+    .card-rate {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: #1a2332;
+      line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+    .card-rate span { font-size: 0.85rem; font-weight: 400; color: #94a3b8; margin-left: 0.2rem; }
+    .card-unit { font-size: 0.7rem; color: #b0bec5; margin-bottom: 0.5rem; }
+
+    .card-change {
+      font-size: 0.82rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 1rem;
+    }
+    .card-change.up   { background: #d1fae5; color: #065f46; }
+    .card-change.down { background: #fee2e2; color: #991b1b; }
+    .card-change.flat { background: #f1f5f9; color: #64748b; }
+    .card-change.no-data { background: #f1f5f9; color: #94a3b8; font-weight: 400; font-size: 0.72rem; }
+
+    .sparkline-wrap { height: 155px; margin-top: 0.65rem; }
+    .no-chart-msg {
+      height: 155px;
+      margin-top: 0.65rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      color: #b0bec5;
+    }
+
+    /* ─── Combined Chart ──────────────────────── */
+    .combined-section {
+      background: #fff;
+      border-radius: 1rem;
+      padding: 1.25rem 1.5rem 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      margin-bottom: 1rem;
+    }
+    .combined-section h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1a2332;
+      margin-bottom: 0.25rem;
+    }
+    .combined-section .sub {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-bottom: 1rem;
+    }
+    .combined-chart-wrap { height: 320px; }
+
+    /* ─── Loading / Error ─────────────────────── */
+    .state-msg {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      grid-column: 1/-1;
+    }
+    .spinner {
+      display: inline-block;
+      width: 1.5rem; height: 1.5rem;
+      border: 3px solid #e2e8f0;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.5rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .data-note {
+      font-size: 0.65rem;
+      color: #b8c4ce;
+      margin-left: 0.4rem;
+    }
+
+    .note {
+      font-size: 0.73rem;
+      color: #b0bec5;
+      text-align: center;
+      padding: 0.5rem;
+    }
+
+    /* ─── Responsive ──────────────────────────── */
+    @media (max-width: 768px) {
+      .cards-grid { grid-template-columns: repeat(2, 1fr); }
+      .sparkline-wrap { height: 100px; }
+      .no-chart-msg { height: 100px; }
+    }
+    @media (max-width: 480px) {
+      header { padding: 1rem 1rem; }
+      .header-text h1 { font-size: 1.15rem; }
+      .sparkline-wrap { height: 80px; }
+      .no-chart-msg { height: 80px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">💱</div>
+  <div class="header-text">
+    <h1>為替トラッカー</h1>
+    <p>各通貨 1単位 = 何円か、変動推移を確認</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="controls">
+    <div class="period-selector">
+      <button class="period-btn" data-period="1W">1週間</button>
+      <button class="period-btn active" data-period="1M">1ヶ月</button>
+      <button class="period-btn" data-period="3M">3ヶ月</button>
+      <button class="period-btn" data-period="1Y">1年</button>
+      <button class="period-btn" data-period="3Y">3年</button>
+      <button class="period-btn" data-period="5Y">5年</button>
+      <button class="period-btn" data-period="10Y">10年</button>
+    </div>
+    <div id="timestamp" class="timestamp"></div>
+  </div>
+
+  <div id="cards-grid" class="cards-grid">
+    <div class="state-msg"><span class="spinner"></span>データを読み込み中…</div>
+  </div>
+
+  <div class="combined-section">
+    <h2>変動率の比較</h2>
+    <div class="sub">期間の起点を 0% として各通貨の増減を表示（ECBデータ対応通貨のみ）</div>
+    <div class="combined-chart-wrap">
+      <canvas id="combined-chart"></canvas>
+    </div>
+  </div>
+
+  <p class="note">
+    データ出典: European Central Bank (frankfurter.dev) / fawazahmed0 Currency API (CDN)<br>
+    為替レートは参考値です。投資判断は必ずご自身でご確認ください。
+  </p>
+
+</div>
+
+<script>
+/* ── 通貨定義 ────────────────────────────────────────────────────── */
+const CURRENCIES = [
+  { code:'USD', name:'ドル円',       flag:'🇺🇸', color:'#3b82f6', mult:1,    unit:'1 USD',      ecb:true  },
+  { code:'EUR', name:'ユーロ円',     flag:'🇪🇺', color:'#6366f1', mult:1,    unit:'1 EUR',      ecb:true  },
+  { code:'KRW', name:'ウォン円',     flag:'🇰🇷', color:'#ec4899', mult:1,    unit:'1 KRW',      ecb:true  },
+  { code:'HKD', name:'香港ドル円',   flag:'🇭🇰', color:'#f59e0b', mult:1,    unit:'1 HKD',      ecb:true  },
+  { code:'CNY', name:'中国元円',     flag:'🇨🇳', color:'#ef4444', mult:1,    unit:'1 CNY',      ecb:true  },
+  { code:'TWD', name:'台湾ドル円',   flag:'🇹🇼', color:'#10b981', mult:1,    unit:'1 TWD',      ecb:false },
+  { code:'MYR', name:'リンギット円', flag:'🇲🇾', color:'#14b8a6', mult:1,    unit:'1 MYR',      ecb:true  },
+  { code:'SGD', name:'Sドル円',      flag:'🇸🇬', color:'#f97316', mult:1,    unit:'1 SGD',      ecb:true  },
+  { code:'THB', name:'バーツ円',     flag:'🇹🇭', color:'#8b5cf6', mult:1,    unit:'1 THB',      ecb:true  },
+  { code:'IDR', name:'ルピア円',     flag:'🇮🇩', color:'#84cc16', mult:1,    unit:'1 IDR',      ecb:true  },
+  { code:'PHP', name:'ペソ円',       flag:'🇵🇭', color:'#06b6d4', mult:1,    unit:'1 PHP',      ecb:true  },
+  { code:'VND', name:'ドン円',       flag:'🇻🇳', color:'#a78bfa', mult:1,    unit:'1 VND',      ecb:false },
+];
+
+const PERIODS = { '1W':7, '1M':30, '3M':90, '1Y':365, '3Y':1095, '5Y':1825, '10Y':3650 };
+
+let currentPeriod = '1M';
+let combinedChart = null;
+const sparkCharts = {};
+
+/* ── ユーティリティ ──────────────────────────────────────────────── */
+function dateStr(daysAgo = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return d.toISOString().slice(0, 10);
+}
+
+function fmtRate(raw, mult) {
+  const v = raw * mult;
+  if (v >= 1000) return v.toFixed(0);
+  if (v >= 100)  return v.toFixed(1);
+  if (v >= 10)   return v.toFixed(2);
+  if (v >= 1)    return v.toFixed(3);
+  return v.toFixed(4);
+}
+
+/* ── API ─────────────────────────────────────────────────────────── */
+async function fetchECBHistory(start, end) {
+  const codes = CURRENCIES.filter(c => c.ecb).map(c => c.code).join(',');
+  const url = `https://api.frankfurter.dev/v1/${start}..${end}?from=JPY&to=${codes}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('frankfurter API error');
+  return res.json();
+}
+
+// 期間に応じてサンプリング間隔を決定した日付配列を生成
+function sampleDates(days) {
+  const step = days <= 7   ? 1
+             : days <= 30  ? 2
+             : days <= 90  ? 5
+             : days <= 365 ? 10
+             : days <= 1095 ? 30
+             : days <= 1825 ? 50
+             : 100;
+  const dates = new Set();
+  for (let i = days; i >= 0; i -= step) dates.add(dateStr(i));
+  dates.add(dateStr(0));
+  return [...dates].sort();
+}
+
+// TWD / VND の履歴を fawazahmed0 CDN から取得（無料・APIキー不要）
+async function fetchTWDVNDHistory(days) {
+  const dates = sampleDates(days);
+  const results = await Promise.all(
+    dates.map(async date => {
+      try {
+        const url = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${date}/v1/currencies/jpy.json`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return { date, jpy: data.jpy };
+      } catch {
+        return null;
+      }
+    })
+  );
+  return results.filter(Boolean);
+}
+
+/* ── データ加工 ──────────────────────────────────────────────────── */
+function buildDataMap(ecbData, twdVndHistory) {
+  const sortedDates = Object.keys(ecbData.rates).sort();
+  const map = {};
+
+  CURRENCIES.forEach(cur => {
+    if (cur.ecb) {
+      const dates = sortedDates.filter(d => ecbData.rates[d]?.[cur.code] != null);
+      // from=JPY → rates = JPY→foreign。逆数で foreign→JPY
+      const rates = dates.map(d => 1 / ecbData.rates[d][cur.code]);
+      map[cur.code] = { dates, rates, currentOnly: false };
+    }
+  });
+
+  // TWD / VND を fawazahmed0 データから構築（1 JPY = X TWD/VND → 逆数で JPY/TWD etc）
+  const twdVndCodes = ['twd', 'vnd'];
+  twdVndCodes.forEach(lc => {
+    const CODE = lc.toUpperCase();
+    const cur = CURRENCIES.find(c => c.code === CODE);
+    if (!cur) return;
+    const valid = twdVndHistory.filter(p => p.jpy?.[lc] != null);
+    if (!valid.length) return;
+    map[CODE] = {
+      dates: valid.map(p => p.date),
+      rates: valid.map(p => 1 / p.jpy[lc]),
+      currentOnly: false,
+    };
+  });
+
+  return map;
+}
+
+/* ── カード描画 ──────────────────────────────────────────────────── */
+function renderCards(dataMap) {
+  // 既存スパークラインを破棄
+  Object.values(sparkCharts).forEach(c => c.destroy());
+  Object.keys(sparkCharts).forEach(k => delete sparkCharts[k]);
+
+  const grid = document.getElementById('cards-grid');
+  grid.innerHTML = '';
+
+  CURRENCIES.forEach(cur => {
+    const d = dataMap[cur.code];
+    if (!d) return;
+
+    const rates = d.rates;
+    const latest = rates.at(-1);
+    const first  = rates[0];
+    const pct    = ((latest - first) / first) * 100;
+
+    // 変動バッジ
+    let changeHtml;
+    if (d.currentOnly) {
+      changeHtml = `<span class="card-change no-data">現在レートのみ</span>`;
+    } else {
+      const sign = pct >= 0 ? '+' : '';
+      const cls  = pct > 0.05 ? 'up' : pct < -0.05 ? 'down' : 'flat';
+      const arrow = pct > 0.05 ? '▲' : pct < -0.05 ? '▼' : '－';
+      changeHtml = `<span class="card-change ${cls}">${arrow} ${sign}${pct.toFixed(2)}%</span>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.borderTopColor = cur.color;
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="card-flag">${cur.flag}</span>
+        <span class="card-name">${cur.name}</span>
+      </div>
+      <div class="card-rate">${fmtRate(latest, cur.mult)}<span>円</span></div>
+      <div class="card-unit">
+        ${cur.unit} あたり${!cur.ecb ? `<span class="data-note">※2024/6〜</span>` : ''}
+      </div>
+      ${changeHtml}
+      ${d.currentOnly
+        ? `<div class="no-chart-msg">履歴データなし</div>`
+        : `<div class="sparkline-wrap"><canvas id="sp-${cur.code}"></canvas></div>`
+      }
+    `;
+    grid.appendChild(card);
+
+    if (!d.currentOnly) {
+      const ctx = document.getElementById(`sp-${cur.code}`).getContext('2d');
+      // X軸ラベルのフォーマット: 期間が1年超なら「年/月」、それ以外は「月/日」
+      const spanDays = d.dates.length > 1
+        ? (new Date(d.dates.at(-1)) - new Date(d.dates[0])) / 86400000
+        : 0;
+      const fmtLabel = iso => {
+        const dt = new Date(iso);
+        return spanDays > 365
+          ? `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}`
+          : `${dt.getMonth()+1}/${dt.getDate()}`;
+      };
+      sparkCharts[cur.code] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: d.dates.map(fmtLabel),
+          datasets: [{
+            data: d.rates.map(r => r * cur.mult),
+            borderColor: cur.color,
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: true,
+            backgroundColor: cur.color + '22',
+            tension: 0.3,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'rgba(26,35,50,0.88)',
+              titleColor: '#94a3b8',
+              bodyColor: '#fff',
+              padding: 8,
+              cornerRadius: 6,
+              titleFont: { size: 10 },
+              bodyFont: { size: 11, weight: '600' },
+              callbacks: {
+                title: items => items[0]?.label ?? '',
+                label: item => {
+                  const v = item.parsed.y;
+                  const s = v >= 1000 ? v.toFixed(0)
+                          : v >= 100  ? v.toFixed(1)
+                          : v >= 10   ? v.toFixed(2)
+                          : v >= 1    ? v.toFixed(3)
+                          : v.toFixed(4);
+                  return `${s} 円`;
+                },
+              },
+            },
+          },
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            x: {
+              display: true,
+              ticks: {
+                maxTicksLimit: 3,
+                maxRotation: 0,
+                font: { size: 9 },
+                color: '#b8c4ce',
+              },
+              grid: { display: false },
+              border: { display: false },
+            },
+            y: {
+              display: true,
+              position: 'right',
+              ticks: {
+                maxTicksLimit: 3,
+                font: { size: 9 },
+                color: '#b8c4ce',
+                callback: v => {
+                  if (v >= 1000) return v.toFixed(0);
+                  if (v >= 100)  return v.toFixed(1);
+                  if (v >= 10)   return v.toFixed(2);
+                  if (v >= 1)    return v.toFixed(3);
+                  return v.toFixed(4);
+                },
+              },
+              grid: { display: false },
+              border: { display: false },
+            },
+          },
+        },
+      });
+    }
+  });
+}
+
+/* ── 複合チャート描画 ─────────────────────────────────────────────── */
+function renderCombined(dataMap) {
+  if (combinedChart) { combinedChart.destroy(); combinedChart = null; }
+
+  const ecbCurrencies = CURRENCIES.filter(c => c.ecb);
+  const refKey = ecbCurrencies[0].code;
+  const refDates = dataMap[refKey]?.dates ?? [];
+  if (!refDates.length) return;
+
+  const datasets = ecbCurrencies.map(cur => {
+    const d = dataMap[cur.code];
+    if (!d || d.rates.length < 2) return null;
+    const base = d.rates[0];
+    return {
+      label: cur.name,
+      data: d.rates.map(r => ((r - base) / base) * 100),
+      borderColor: cur.color,
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0.3,
+    };
+  }).filter(Boolean);
+
+  const ctx = document.getElementById('combined-chart').getContext('2d');
+  combinedChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: refDates, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { usePointStyle: true, pointStyle: 'line', font: { size: 11 }, padding: 12 },
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              return `${ctx.dataset.label}: ${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { maxTicksLimit: 6, font: { size: 11 }, color: '#94a3b8' },
+          grid: { display: false },
+          border: { color: '#e2e8f0' },
+        },
+        y: {
+          ticks: {
+            font: { size: 11 },
+            color: '#94a3b8',
+            callback: v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%',
+          },
+          grid: { color: '#f1f5f9' },
+          border: { dash: [4, 4], color: '#e2e8f0' },
+        },
+      },
+      interaction: { mode: 'index', intersect: false },
+    },
+  });
+}
+
+/* ── メインロード ─────────────────────────────────────────────────── */
+async function load() {
+  const days = PERIODS[currentPeriod];
+  const start = dateStr(days);
+  const end   = dateStr(0);
+
+  document.getElementById('cards-grid').innerHTML =
+    '<div class="state-msg"><span class="spinner"></span>データを読み込み中…</div>';
+  document.getElementById('timestamp').textContent = '';
+
+  try {
+    const [ecbData, twdVndHistory] = await Promise.all([
+      fetchECBHistory(start, end),
+      fetchTWDVNDHistory(days),
+    ]);
+
+    const dataMap = buildDataMap(ecbData, twdVndHistory);
+
+    document.getElementById('timestamp').textContent =
+      `更新: ${new Date().toLocaleString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' })}`;
+
+    renderCards(dataMap);
+    renderCombined(dataMap);
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('cards-grid').innerHTML =
+      '<div class="state-msg">⚠️ データの読み込みに失敗しました。時間をおいて再読み込みしてください。</div>';
+  }
+}
+
+/* ── イベント ─────────────────────────────────────────────────────── */
+document.querySelectorAll('.period-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelector('.period-btn.active').classList.remove('active');
+    btn.classList.add('active');
+    currentPeriod = btn.dataset.period;
+    load();
+  });
+});
+
+load();
+</script>
+</body>
+</html>
