@@ -381,9 +381,57 @@
       .tree-panel { flex: none; }
       .session-clock { font-size: 2.6rem; }
     }
+
+    .bgm-ctrl {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .bgm-ctrl input[type="range"] {
+      width: 80px;
+      accent-color: var(--green);
+      cursor: pointer;
+    }
+
+    .btn-bgm {
+      background: var(--surface3);
+      border: 1.5px solid var(--border);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+    .btn-bgm:hover { background: var(--border); transform: scale(1.05); }
+    .btn-bgm.playing { background: var(--green-soft); color: var(--green-dark); border-color: var(--green); }
+
+    .track-select {
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 0.8rem;
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
+  <audio id="bgm" loop></audio>
 
 <header>
   <h1>🌿 StudyForest</h1>
@@ -417,6 +465,23 @@
       <div class="session-clock" id="sessionClock">00:00:00</div>
       <div class="today-line">今日の合計: <span id="todayTotal">0分</span></div>
       <button class="btn-main" id="toggleBtn" onclick="toggleLearning()">学習開始 🌱</button>
+      
+      <!-- BGM Control -->
+      <div class="bgm-ctrl" style="margin-top: 15px; border-top: 1.5px solid var(--border); padding-top: 15px;">
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <button id="bgmToggleBtn" class="btn-bgm" onclick="toggleBGM()" title="再生/停止">▶️</button>
+          <select id="trackSelect" class="track-select" onchange="changeTrack()" style="margin-bottom: 0; flex: 1;">
+            <option value="Window_and_Cedar.mp3">Window and Cedar 🌿</option>
+            <option value="Rain_on_the_Windowpane.mp3">Rain on the Windowpane ☔️</option>
+            <option value="Reflections_at_Eight.mp3">Reflections at Eight ✨</option>
+          </select>
+        </div>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: var(--muted); display: flex; align-items: center; gap: 6px;">
+            🔈 <input type="range" id="bgmVol" min="0" max="1" step="0.1" value="0.5" onchange="updateVol()"> 🔊
+          </label>
+        </div>
+      </div>
     </div>
 
     <!-- Pomodoro -->
@@ -524,6 +589,7 @@ function toggleLearning() {
     sessionSecs = 0;
     document.getElementById('toggleBtn').textContent = '学習終了 🍃';
     document.getElementById('toggleBtn').classList.add('stop');
+    
     sessionTimer = setInterval(() => {
       sessionSecs++;
       document.getElementById('sessionClock').textContent = fmtHMS(sessionSecs);
@@ -543,7 +609,42 @@ function stopStudying() {
   document.getElementById('sessionClock').textContent = '00:00:00';
   document.getElementById('toggleBtn').textContent = '学習開始 🌱';
   document.getElementById('toggleBtn').classList.remove('stop');
+  
   refreshAll();
+}
+
+function updateVol() {
+  const bgm = document.getElementById('bgm');
+  bgm.volume = document.getElementById('bgmVol').value;
+}
+
+function toggleBGM() {
+  const bgm = document.getElementById('bgm');
+  const btn = document.getElementById('bgmToggleBtn');
+  
+  if (bgm.paused) {
+    if (!bgm.src) changeTrack();
+    bgm.volume = document.getElementById('bgmVol').value;
+    bgm.play().catch(e => console.log("BGM playback failed:", e));
+    btn.textContent = '⏸';
+    btn.classList.add('playing');
+  } else {
+    bgm.pause();
+    btn.textContent = '▶️';
+    btn.classList.remove('playing');
+  }
+}
+
+function changeTrack() {
+  const bgm = document.getElementById('bgm');
+  const btn = document.getElementById('bgmToggleBtn');
+  const track = document.getElementById('trackSelect').value;
+  const wasPlaying = !bgm.paused;
+  
+  bgm.src = track;
+  if (wasPlaying) {
+    bgm.play().catch(e => {});
+  }
 }
 
 // ─────────────────────────────────────────────
