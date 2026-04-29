@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>画像フォーマット変換</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d2e;
+      --surface2: #232740;
+      --border: #2e3350;
+      --accent: #6c63ff;
+      --accent2: #ff6584;
+      --text: #e2e8f0;
+      --text-muted: #8892a4;
+      --success: #48bb78;
+      --warning: #f6ad55;
+      --radius: 12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #6c63ff, #ff6584);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* ── Format grid ── */
+    .format-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+
+    .format-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .format-badge span { color: var(--accent); font-weight: 600; }
+
+    /* ── Drop zone ── */
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: var(--surface);
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .dropzone:hover, .dropzone.drag-over {
+      border-color: var(--accent);
+      background: rgba(108,99,255,0.07);
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      line-height: 1;
+    }
+
+    .drop-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .drop-sub {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* ── File info ── */
+    .file-info {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: none;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .file-info.visible { display: flex; }
+
+    .file-thumb {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      border-radius: 6px;
+      background: var(--surface2);
+      flex-shrink: 0;
+    }
+
+    .file-meta { flex: 1; min-width: 0; }
+
+    .file-name {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+
+    .file-details { color: var(--text-muted); font-size: 0.82rem; }
+
+    .file-clear {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.3rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .file-clear:hover { color: var(--accent2); background: rgba(255,101,132,0.1); }
+
+    /* ── Settings card ── */
+    .settings-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .settings-row + .settings-row { margin-top: 16px; }
+
+    .settings-label {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      min-width: 110px;
+    }
+
+    .format-select {
+      flex: 1;
+      min-width: 140px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238892a4' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    .format-select:focus { border-color: var(--accent); }
+    .format-select:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .quality-row { align-items: center; }
+
+    .quality-slider {
+      flex: 1;
+      min-width: 120px;
+      accent-color: var(--accent);
+      height: 4px;
+      cursor: pointer;
+    }
+
+    .quality-val {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent);
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .quality-note {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .svg-note {
+      font-size: 0.8rem;
+      color: var(--warning);
+      background: rgba(246,173,85,0.08);
+      border: 1px solid rgba(246,173,85,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 12px;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .svg-note.visible { display: block; }
+
+    /* ── Convert button ── */
+    .convert-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #6c63ff, #8b85ff);
+      border: none;
+      border-radius: var(--radius);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 14px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-bottom: 24px;
+      letter-spacing: 0.03em;
+    }
+
+    .convert-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .convert-btn:active:not(:disabled) { transform: translateY(0); }
+    .convert-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    /* ── Preview area ── */
+    .preview-area {
+      display: none;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .preview-area.visible { display: grid; grid-template-columns: 1fr 1fr; }
+
+    @media (max-width: 580px) {
+      .preview-area.visible { grid-template-columns: 1fr; }
+    }
+
+    .preview-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .preview-header {
+      padding: 10px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preview-header .badge {
+      background: var(--surface2);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      color: var(--text);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .preview-img-wrap {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 160px;
+      background: repeating-conic-gradient(#2a2d3e 0% 25%, transparent 0% 50%) 0 0 / 20px 20px;
+    }
+
+    .preview-img {
+      max-width: 100%;
+      max-height: 260px;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    .preview-size {
+      padding: 8px 16px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Download button ── */
+    .download-btn {
+      display: none;
+      width: 100%;
+      background: linear-gradient(135deg, #48bb78, #38a169);
+      border: none;
+      border-radius: var(--radius);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 14px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.03em;
+    }
+
+    .download-btn.visible { display: block; }
+    .download-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* ── Processing spinner ── */
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      background: rgba(255,101,132,0.1);
+      border: 1px solid rgba(255,101,132,0.3);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--accent2);
+      font-size: 0.88rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .error-msg.visible { display: block; }
+
+    footer {
+      text-align: center;
+      margin-top: 48px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>画像フォーマット変換</h1>
+    <p>ブラウザのみで完結・アップロード不要</p>
+  </header>
+
+  <div class="format-grid">
+    <div class="format-badge"><span>JPEG</span> → PNG / WebP / SVG</div>
+    <div class="format-badge"><span>PNG</span> → JPEG / WebP / SVG</div>
+    <div class="format-badge"><span>WebP</span> → PNG / JPEG / SVG</div>
+    <div class="format-badge"><span>SVG</span> → PNG / JPEG / WebP</div>
+  </div>
+
+  <!-- Drop zone -->
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.webp,.svg,image/jpeg,image/png,image/webp,image/svg+xml" />
+    <div class="drop-icon">🖼️</div>
+    <div class="drop-title">クリックまたはドラッグ＆ドロップ</div>
+    <div class="drop-sub">JPEG・PNG・WebP・SVG に対応</div>
+  </div>
+
+  <!-- File info -->
+  <div class="file-info" id="fileInfo">
+    <img class="file-thumb" id="fileThumb" src="" alt="" />
+    <div class="file-meta">
+      <div class="file-name" id="fileName">—</div>
+      <div class="file-details" id="fileDetails">—</div>
+    </div>
+    <button class="file-clear" id="fileClear" title="クリア">✕</button>
+  </div>
+
+  <!-- Settings -->
+  <div class="settings-card">
+    <div class="settings-row">
+      <span class="settings-label">変換先フォーマット</span>
+      <select class="format-select" id="outputFormat" disabled>
+        <option value="">— ファイルを選択してください —</option>
+      </select>
+    </div>
+    <div class="settings-row quality-row" id="qualityRow" style="display:none">
+      <span class="settings-label">品質</span>
+      <input type="range" class="quality-slider" id="qualitySlider" min="1" max="100" value="92" />
+      <span class="quality-val" id="qualityVal">92%</span>
+      <span class="quality-note">値が大きいほど高画質・大きいファイルサイズ</span>
+    </div>
+    <div class="svg-note" id="svgNote">
+      ⚠️ ラスター → SVG 変換は、画像をそのまま SVG に埋め込む形式です（ベクタートレースではありません）。見た目は同じですが、拡大してもベクター化はされていません。
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- Convert button -->
+  <button class="convert-btn" id="convertBtn" disabled>変換する</button>
+
+  <!-- Preview -->
+  <div class="preview-area" id="previewArea">
+    <div class="preview-panel">
+      <div class="preview-header">
+        変換前
+        <span class="badge" id="inputBadge">—</span>
+      </div>
+      <div class="preview-img-wrap">
+        <img class="preview-img" id="previewInput" src="" alt="変換前" />
+      </div>
+      <div class="preview-size" id="inputSize">—</div>
+    </div>
+    <div class="preview-panel">
+      <div class="preview-header">
+        変換後
+        <span class="badge" id="outputBadge">—</span>
+      </div>
+      <div class="preview-img-wrap">
+        <img class="preview-img" id="previewOutput" src="" alt="変換後" />
+      </div>
+      <div class="preview-size" id="outputSize">—</div>
+    </div>
+  </div>
+
+  <!-- Download -->
+  <a class="download-btn" id="downloadBtn">ダウンロード</a>
+
+  <footer>
+    変換はすべてブラウザ内で処理されます。画像がサーバーに送られることはありません。
+  </footer>
+
+</div>
+
+<script>
+  const FORMAT_MAP = {
+    jpeg: { label: 'JPEG', mime: 'image/jpeg', ext: 'jpg', lossy: true },
+    png:  { label: 'PNG',  mime: 'image/png',  ext: 'png', lossy: false },
+    webp: { label: 'WebP', mime: 'image/webp', ext: 'webp', lossy: true },
+    svg:  { label: 'SVG',  mime: 'image/svg+xml', ext: 'svg', lossy: false },
+  };
+
+  const OUTPUT_OPTIONS = {
+    jpeg: ['png', 'webp', 'svg'],
+    png:  ['jpeg', 'webp', 'svg'],
+    webp: ['jpeg', 'png', 'svg'],
+    svg:  ['jpeg', 'png', 'webp'],
+  };
+
+  let currentFile = null;
+  let currentInputFormat = null;
+  let convertedDataUrl = null;
+  let convertedMime = null;
+  let convertedExt = null;
+
+  const dropzone    = document.getElementById('dropzone');
+  const fileInput   = document.getElementById('fileInput');
+  const fileInfo    = document.getElementById('fileInfo');
+  const fileThumb   = document.getElementById('fileThumb');
+  const fileName    = document.getElementById('fileName');
+  const fileDetails = document.getElementById('fileDetails');
+  const fileClear   = document.getElementById('fileClear');
+  const outputFmt   = document.getElementById('outputFormat');
+  const qualityRow  = document.getElementById('qualityRow');
+  const qualitySlider = document.getElementById('qualitySlider');
+  const qualityVal  = document.getElementById('qualityVal');
+  const svgNote     = document.getElementById('svgNote');
+  const convertBtn  = document.getElementById('convertBtn');
+  const previewArea = document.getElementById('previewArea');
+  const previewInput  = document.getElementById('previewInput');
+  const previewOutput = document.getElementById('previewOutput');
+  const inputBadge  = document.getElementById('inputBadge');
+  const outputBadge = document.getElementById('outputBadge');
+  const inputSize   = document.getElementById('inputSize');
+  const outputSize  = document.getElementById('outputSize');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const errorMsg    = document.getElementById('errorMsg');
+
+  // ── Drag & Drop ──
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+
+  fileClear.addEventListener('click', clearFile);
+
+  qualitySlider.addEventListener('input', () => {
+    qualityVal.textContent = qualitySlider.value + '%';
+  });
+
+  outputFmt.addEventListener('change', () => {
+    const fmt = outputFmt.value;
+    updateQualityVisibility(fmt);
+    resetOutput();
+  });
+
+  convertBtn.addEventListener('click', doConvert);
+
+  // ── File handling ──
+  function detectFormat(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext === 'jpg' || ext === 'jpeg') return 'jpeg';
+    if (ext === 'png')  return 'png';
+    if (ext === 'webp') return 'webp';
+    if (ext === 'svg')  return 'svg';
+    if (file.type === 'image/jpeg') return 'jpeg';
+    if (file.type === 'image/png')  return 'png';
+    if (file.type === 'image/webp') return 'webp';
+    if (file.type === 'image/svg+xml') return 'svg';
+    return null;
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  function handleFile(file) {
+    const fmt = detectFormat(file);
+    if (!fmt) {
+      showError('対応していないファイル形式です。JPEG・PNG・WebP・SVG を選択してください。');
+      return;
+    }
+    hideError();
+    currentFile = file;
+    currentInputFormat = fmt;
+
+    // File info
+    fileName.textContent = file.name;
+    fileDetails.textContent = `${FORMAT_MAP[fmt].label} · ${formatBytes(file.size)}`;
+    fileInfo.classList.add('visible');
+
+    // Thumbnail
+    const reader = new FileReader();
+    reader.onload = e => {
+      fileThumb.src = e.target.result;
+      previewInput.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+
+    // Output format options
+    populateOutputOptions(fmt);
+
+    resetOutput();
+    convertBtn.disabled = false;
+    inputBadge.textContent = FORMAT_MAP[fmt].label;
+    inputSize.textContent = `ファイルサイズ: ${formatBytes(file.size)}`;
+  }
+
+  function populateOutputOptions(inputFmt) {
+    outputFmt.innerHTML = '';
+    const options = OUTPUT_OPTIONS[inputFmt];
+    options.forEach(fmt => {
+      const opt = document.createElement('option');
+      opt.value = fmt;
+      opt.textContent = FORMAT_MAP[fmt].label;
+      outputFmt.appendChild(opt);
+    });
+    outputFmt.disabled = false;
+    updateQualityVisibility(outputFmt.value);
+  }
+
+  function updateQualityVisibility(fmt) {
+    if (fmt === 'jpeg' || fmt === 'webp') {
+      qualityRow.style.display = 'flex';
+      qualityRow.style.flexWrap = 'wrap';
+    } else {
+      qualityRow.style.display = 'none';
+    }
+    // SVG note
+    if (fmt === 'svg') {
+      svgNote.classList.add('visible');
+    } else {
+      svgNote.classList.remove('visible');
+    }
+  }
+
+  function clearFile() {
+    currentFile = null;
+    currentInputFormat = null;
+    convertedDataUrl = null;
+    fileInfo.classList.remove('visible');
+    fileThumb.src = '';
+    fileInput.value = '';
+    outputFmt.innerHTML = '<option value="">— ファイルを選択してください —</option>';
+    outputFmt.disabled = true;
+    qualityRow.style.display = 'none';
+    svgNote.classList.remove('visible');
+    convertBtn.disabled = true;
+    previewArea.classList.remove('visible');
+    downloadBtn.classList.remove('visible');
+    hideError();
+  }
+
+  function resetOutput() {
+    convertedDataUrl = null;
+    previewArea.classList.remove('visible');
+    downloadBtn.classList.remove('visible');
+  }
+
+  // ── Conversion ──
+  async function doConvert() {
+    if (!currentFile) return;
+    hideError();
+
+    const outFmt = outputFmt.value;
+    if (!outFmt) return;
+
+    const quality = parseInt(qualitySlider.value) / 100;
+    convertBtn.disabled = true;
+    convertBtn.innerHTML = '<span class="spinner"></span>変換中...';
+
+    try {
+      let dataUrl;
+      if (outFmt === 'svg') {
+        dataUrl = await rasterToSVG(currentFile);
+      } else if (currentInputFormat === 'svg') {
+        dataUrl = await svgToRaster(currentFile, outFmt, quality);
+      } else {
+        dataUrl = await rasterToRaster(currentFile, outFmt, quality);
+      }
+
+      convertedDataUrl = dataUrl;
+      convertedMime = FORMAT_MAP[outFmt].mime;
+      convertedExt  = FORMAT_MAP[outFmt].ext;
+
+      // Show preview
+      previewOutput.src = dataUrl;
+      outputBadge.textContent = FORMAT_MAP[outFmt].label;
+      previewArea.classList.add('visible');
+
+      // Estimate size from base64
+      const base64 = dataUrl.split(',')[1] || '';
+      const bytes = Math.round((base64.length * 3) / 4);
+      outputSize.textContent = `ファイルサイズ: ${formatBytes(bytes)}`;
+
+      // Download link
+      const baseName = currentFile.name.replace(/\.[^.]+$/, '');
+      downloadBtn.href = dataUrl;
+      downloadBtn.download = `${baseName}.${convertedExt}`;
+      downloadBtn.textContent = `${FORMAT_MAP[outFmt].label} をダウンロード`;
+      downloadBtn.classList.add('visible');
+
+    } catch (err) {
+      showError('変換に失敗しました: ' + (err.message || err));
+    } finally {
+      convertBtn.disabled = false;
+      convertBtn.textContent = '変換する';
+    }
+  }
+
+  function rasterToRaster(file, outFmt, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width  = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (outFmt === 'jpeg') {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        const mime = FORMAT_MAP[outFmt].mime;
+        const q = (outFmt === 'jpeg' || outFmt === 'webp') ? quality : undefined;
+        resolve(canvas.toDataURL(mime, q));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('画像の読み込みに失敗しました')); };
+      img.src = url;
+    });
+  }
+
+  function svgToRaster(file, outFmt, quality) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const svgText = e.target.result;
+
+        // Parse dimensions from SVG
+        let w = 0, h = 0;
+        const wm = svgText.match(/\bwidth=["']([0-9.]+)/);
+        const hm = svgText.match(/\bheight=["']([0-9.]+)/);
+        const vb = svgText.match(/viewBox=["']\s*([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)/);
+        if (wm) w = parseFloat(wm[1]);
+        if (hm) h = parseFloat(hm[1]);
+        if ((!w || !h) && vb) { w = parseFloat(vb[3]); h = parseFloat(vb[4]); }
+        if (!w) w = 800;
+        if (!h) h = 600;
+
+        const img = new Image();
+        const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+        const url  = URL.createObjectURL(blob);
+
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width  = img.naturalWidth  || w;
+          canvas.height = img.naturalHeight || h;
+          const ctx = canvas.getContext('2d');
+          if (outFmt === 'jpeg') {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          const mime = FORMAT_MAP[outFmt].mime;
+          const q = (outFmt === 'jpeg' || outFmt === 'webp') ? quality : undefined;
+          resolve(canvas.toDataURL(mime, q));
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('SVGの読み込みに失敗しました')); };
+        img.src = url;
+      };
+      reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました'));
+      reader.readAsText(file);
+    });
+  }
+
+  function rasterToSVG(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const dataUrl = e.target.result;
+        const img = new Image();
+        img.onload = () => {
+          const w = img.naturalWidth;
+          const h = img.naturalHeight;
+          const svg = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"`,
+            `     width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`,
+            `  <image width="${w}" height="${h}" xlink:href="${dataUrl}"/>`,
+            '</svg>'
+          ].join('\n');
+          resolve('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+        };
+        img.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
+        img.src = dataUrl;
+      };
+      reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function showError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.classList.add('visible');
+  }
+
+  function hideError() {
+    errorMsg.classList.remove('visible');
+  }
+</script>
+</body>
+</html>
