@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ソウル きれいなトイレマップ</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+      background: #f4f1ed;
+      color: #2c2c2c;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    header h1 { font-size: 1.1rem; font-weight: 700; }
+    header .sub { font-size: 0.72rem; color: #9ab; margin-top: 2px; }
+
+    /* --- フィルター --- */
+    .filters {
+      background: #fff;
+      border-bottom: 1px solid #e0dbd4;
+      padding: 10px 16px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .filter-btn {
+      border: 1.5px solid #d5d0ca;
+      background: #fff;
+      color: #555;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .filter-btn:hover { border-color: #d94f43; color: #d94f43; }
+    .filter-btn.active { background: #d94f43; border-color: #d94f43; color: #fff; font-weight: 600; }
+
+    /* --- メインエリア --- */
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 12px 12px 40px;
+    }
+
+    .result-count {
+      font-size: 0.75rem;
+      color: #888;
+      padding: 6px 4px 8px;
+    }
+
+    .result-count span { color: #d94f43; font-weight: 700; }
+
+    /* --- カード --- */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      overflow: hidden;
+      border: 1.5px solid transparent;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .card:hover { border-color: #d94f43; box-shadow: 0 3px 12px rgba(217,79,67,0.12); }
+
+    .card-body { padding: 14px 16px 10px; }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .card-name { font-size: 0.95rem; font-weight: 700; line-height: 1.3; }
+    .card-name-ko { font-size: 0.72rem; color: #aaa; margin-top: 1px; }
+
+    .area-badge {
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 0.68rem;
+      padding: 3px 9px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .card-meta {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      padding: 2px 9px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .badge-cat { background: #f0ece8; color: #666; }
+    .badge-washlet { background: #e6f4ea; color: #2a7d34; }
+    .badge-no { background: #f5f5f5; color: #aaa; }
+
+    .card-notes {
+      font-size: 0.75rem;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 6px;
+    }
+
+    .card-hours {
+      font-size: 0.7rem;
+      color: #999;
+    }
+
+    /* --- アクションフッター --- */
+    .card-actions {
+      border-top: 1px solid #f0ece8;
+      display: flex;
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 10px 8px;
+      font-size: 0.75rem;
+      color: #555;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: background 0.1s;
+    }
+
+    .action-btn:hover { background: #faf7f4; color: #d94f43; }
+    .action-btn + .action-btn { border-left: 1px solid #f0ece8; }
+
+    /* --- 地図パネル --- */
+    .map-toggle-wrap {
+      margin-bottom: 12px;
+    }
+
+    .map-toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #fff;
+      border: 1.5px solid #d5d0ca;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 0.8rem;
+      color: #555;
+      cursor: pointer;
+      font-family: inherit;
+      width: 100%;
+      transition: all 0.15s;
+    }
+
+    .map-toggle-btn:hover { border-color: #d94f43; color: #d94f43; }
+    .map-toggle-btn.open { border-color: #d94f43; color: #d94f43; background: #fff8f7; }
+
+    #map-container {
+      display: none;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 8px;
+      border: 1px solid #e0dbd4;
+    }
+
+    #map-container.open { display: block; }
+
+    #map { height: 340px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:1.5rem">🚻</span>
+  <div>
+    <h1>ソウル きれいなトイレマップ</h1>
+    <div class="sub">デパート・ショッピングモールのトイレを厳選 · 日本人旅行者向け</div>
+  </div>
+</header>
+
+<div class="filters">
+  <button class="filter-btn active" data-area="all">すべて</button>
+  <button class="filter-btn" data-area="明洞">明洞</button>
+  <button class="filter-btn" data-area="弘大">弘大</button>
+  <button class="filter-btn" data-area="江南">江南</button>
+  <button class="filter-btn" data-area="狎鴎亭">狎鴎亭</button>
+  <button class="filter-btn" data-area="聖水">聖水</button>
+  <button class="filter-btn" data-area="蚕室">蚕室</button>
+  <button class="filter-btn" data-area="東大門">東大門</button>
+  <button class="filter-btn" data-area="汝矣島">汝矣島</button>
+  <button class="filter-btn" data-area="新村">新村</button>
+  <button class="filter-btn" data-area="ソウル駅">ソウル駅</button>
+  <button class="filter-btn" data-area="龍山">龍山</button>
+  <button class="filter-btn" data-area="永登浦">永登浦</button>
+  <button class="filter-btn" data-area="建大">建大</button>
+  <button class="filter-btn" data-area="天鶴洞">天鶴洞</button>
+  <button class="filter-btn" data-area="恩平">恩平</button>
+  <button class="filter-btn" data-area="漢南洞">漢南洞</button>
+  <button class="filter-btn" data-area="河南">河南（郊外）</button>
+</div>
+
+<div class="container">
+  <div class="result-count"><span id="count">0</span> か所</div>
+
+  <!-- 地図トグル -->
+  <div class="map-toggle-wrap">
+    <button class="map-toggle-btn" id="mapToggleBtn" onclick="toggleMap()">
+      🗺️ 地図で全体を見る
+    </button>
+    <div id="map-container">
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const SPOTS = [
+  {
+    id: 1, name: "ロッテ百貨店 本店", name_ko: "롯데백화점 본점",
+    area: "明洞", category: "デパート",
+    lat: 37.5651, lng: 126.9820,
+    hours: "10:30〜20:00（金土〜20:30）", washlet: true,
+    notes: "各フロアに完備。地下1〜2Fが利用しやすい"
+  },
+  {
+    id: 2, name: "新世界百貨店 本店", name_ko: "신세계백화점 본점",
+    area: "明洞", category: "デパート",
+    lat: 37.5600, lng: 126.9757,
+    hours: "10:30〜20:00", washlet: true,
+    notes: "クラシックな外観だが館内は清潔。地下食料品フロアのトイレも綺麗"
+  },
+  {
+    id: 3, name: "現代百貨店 狎鴎亭本店", name_ko: "현대백화점 압구정본점",
+    area: "狎鴎亭", category: "デパート",
+    lat: 37.5265, lng: 127.0284,
+    hours: "10:30〜20:00（金土〜20:30）", washlet: true,
+    notes: "旗艦店。高級感あり、各フロアのトイレが広くて清潔"
+  },
+  {
+    id: 4, name: "ギャラリア百貨店 名品館", name_ko: "갤러리아백화점 명품관",
+    area: "狎鴎亭", category: "デパート",
+    lat: 37.5276, lng: 127.0402,
+    hours: "10:30〜20:00（金土〜20:30）", washlet: true,
+    notes: "ソウル屈指の高級デパート。トイレのクオリティも最高水準"
+  },
+  {
+    id: 5, name: "COEXモール", name_ko: "코엑스몰",
+    area: "江南", category: "ショッピングモール",
+    lat: 37.5126, lng: 127.0594,
+    hours: "10:30〜22:00", washlet: true,
+    notes: "地下の大型モール。トイレが多く見つけやすい。星の本棚近くが特に綺麗"
+  },
+  {
+    id: 6, name: "IFC Mall", name_ko: "IFC몰",
+    area: "汝矣島", category: "ショッピングモール",
+    lat: 37.5254, lng: 126.9247,
+    hours: "10:30〜22:00", washlet: true,
+    notes: "国際ビジネス街に隣接。外資系テナント多数でトイレも洗練されている"
+  },
+  {
+    id: 7, name: "タイムズスクエア", name_ko: "타임스퀘어",
+    area: "永登浦", category: "ショッピングモール",
+    lat: 37.5167, lng: 126.9046,
+    hours: "10:30〜22:00", washlet: true,
+    notes: "大型複合施設。映画館・ホテル併設でトイレ管理が行き届いている"
+  },
+  {
+    id: 8, name: "ロッテワールドモール", name_ko: "롯데월드몰",
+    area: "蚕室", category: "ショッピングモール",
+    lat: 37.5131, lng: 127.1024,
+    hours: "10:30〜22:00", washlet: true,
+    notes: "ロッテワールドタワー隣接の超大型モール。各フロアに多数あり清潔"
+  },
+  {
+    id: 9, name: "アイパークモール", name_ko: "아이파크몰",
+    area: "龍山", category: "ショッピングモール",
+    lat: 37.5295, lng: 126.9649,
+    hours: "10:30〜22:00", washlet: false,
+    notes: "龍山駅直結。7フロアの大型モールでトイレが充実"
+  },
+  {
+    id: 10, name: "AK＆ 弘大店", name_ko: "AK& 홍대점",
+    area: "弘大", category: "ショッピングモール",
+    lat: 37.5568, lng: 126.9243,
+    hours: "11:00〜22:00", washlet: false,
+    notes: "弘大入口駅直結。若者向けだが清掃が行き届いている"
+  },
+  {
+    id: 11, name: "現代百貨店 板橋店", name_ko: "현대백화점 판교점",
+    area: "板橋", category: "デパート",
+    lat: 37.3941, lng: 127.1114,
+    hours: "10:30〜20:30", washlet: true,
+    notes: "新興高級住宅地に位置。新しく清潔感抜群"
+  },
+  {
+    id: 12, name: "新世界百貨店 江南店", name_ko: "신세계백화점 강남점",
+    area: "江南", category: "デパート",
+    lat: 37.5045, lng: 127.0048,
+    hours: "10:30〜20:00（金土〜20:30）", washlet: true,
+    notes: "江南エリア最大規模のデパート。パウダールームも充実"
+  },
+  {
+    id: 13, name: "ロッテモール ソウル駅店", name_ko: "롯데몰 서울역점",
+    area: "ソウル駅", category: "ショッピングモール",
+    lat: 37.5546, lng: 126.9706,
+    hours: "10:30〜22:00", washlet: true,
+    notes: "ソウル駅改札を出てすぐ。地下〜7階の大型モール。乗り継ぎ中でも立ち寄りやすい"
+  },
+  {
+    id: 14, name: "ロッテアウトレット ソウル駅店", name_ko: "롯데아울렛 서울역점",
+    area: "ソウル駅", category: "ショッピングモール",
+    lat: 37.5550, lng: 126.9712,
+    hours: "10:30〜21:00", washlet: true,
+    notes: "ロッテモールと同じビル内の別館。空港鉄道利用前後に便利"
+  },
+  {
+    id: 15, name: "ザ・ヒョンデ ソウル", name_ko: "더현대 서울",
+    area: "汝矣島", category: "デパート",
+    lat: 37.5262, lng: 126.9269,
+    hours: "10:30〜20:00（金土〜20:30）", washlet: true,
+    notes: "2021年オープン。吹き抜けと緑が印象的な話題のデパート。トイレも新しく広い"
+  },
+  {
+    id: 16, name: "現代百貨店 新村店", name_ko: "현대백화점 신촌점",
+    area: "新村", category: "デパート",
+    lat: 37.5560, lng: 126.9367,
+    hours: "10:30〜20:00（金土〜20:30）", washlet: true,
+    notes: "新村駅直結。弘大・梨大エリアの観光ついでに立ち寄れる"
+  },
+  {
+    id: 17, name: "ロッテ百貨店 建大入口店", name_ko: "롯데백화점 건대입구점",
+    area: "建大", category: "デパート",
+    lat: 37.5395, lng: 127.0699,
+    hours: "10:30〜20:00（金土〜20:30）", washlet: true,
+    notes: "建大入口駅直結。若者に人気のエリアで、聖水観光のついでに立ち寄りやすい"
+  },
+  {
+    id: 18, name: "ロッテモール 恩平店", name_ko: "롯데몰 은평점",
+    area: "恩平", category: "ショッピングモール",
+    lat: 37.6131, lng: 126.9197,
+    hours: "10:30〜22:00", washlet: true,
+    notes: "北西ソウルの大型モール。世界遺産・北漢山や恩平韓屋村の観光と組み合わせやすい"
+  },
+  {
+    id: 19, name: "スターフィールド ハーナム", name_ko: "스타필드 하남",
+    area: "河南", category: "ショッピングモール",
+    lat: 37.5330, lng: 127.2115,
+    hours: "10:00〜22:00", washlet: true,
+    notes: "ソウル郊外だが規模・清潔さはNo.1クラス。広大な館内でトイレも多数。日帰り買い物の目的地として人気"
+  },
+  {
+    id: 20, name: "現代百貨店 天鶴洞店", name_ko: "현대백화점 천호점",
+    area: "天鶴洞", category: "デパート",
+    lat: 37.5385, lng: 127.1241,
+    hours: "10:30〜20:00（金土〜20:30）", washlet: true,
+    notes: "天鶴洞駅直結。東ソウルの拠点となるデパート"
+  },
+  {
+    id: 21, name: "KT&G サンサンプラネット", name_ko: "KT&G 상상플래닛",
+    area: "聖水", category: "複合施設",
+    lat: 37.5436, lng: 127.0561,
+    hours: "10:00〜19:00", washlet: false,
+    notes: "青年創業支援施設。1〜2Fのトイレを無料利用可。警備員がいても気にせず入ってOK。2Fが空いていることが多い"
+  },
+  {
+    id: 22, name: "オリーブヤング N ソンス", name_ko: "올리브영 N 성수",
+    area: "聖水", category: "コスメ・商業施設",
+    lat: 37.5441, lng: 127.0553,
+    hours: "11:00〜21:00", washlet: false,
+    notes: "2024年11月開館の大型コスメストア。1Fに男女トイレ・2Fに女性用トイレ・多目的トイレも完備。無料利用可"
+  },
+  {
+    id: 23, name: "LCDC SEOUL", name_ko: "LCDC 서울",
+    area: "聖水", category: "複合施設",
+    lat: 37.5444, lng: 127.0568,
+    hours: "11:00〜21:00", washlet: false,
+    notes: "メインストリートから少し離れた位置にある複合施設。清潔度が高いと評判"
+  },
+  {
+    id: 24, name: "サムスン電子 ソチョ社屋", name_ko: "삼성전자 서초사옥",
+    area: "江南", category: "商業施設",
+    lat: 37.5009, lng: 127.0259,
+    hours: "終日（B1・B2アーケード）", washlet: false,
+    notes: "江南駅8番出口から地下道で直結。B1・B2アーケード内のトイレは「江南駅周辺で最も綺麗」と評される"
+  },
+  {
+    id: 25, name: "無印良品 江南店", name_ko: "무인양품 강남점",
+    area: "江南", category: "商業施設",
+    lat: 37.4988, lng: 127.0271,
+    hours: "11:00〜21:00", washlet: false,
+    notes: "江南駅10番出口から北へ約5分。4Fにトイレあり。隣にパウダールームがあり無印のスキンケアを試せる"
+  },
+  {
+    id: 26, name: "教保文庫 江南店", name_ko: "교보문고 강남점",
+    area: "江南", category: "書店・商業施設",
+    lat: 37.5014, lng: 127.0250,
+    hours: "09:30〜22:00", washlet: false,
+    notes: "新論峴駅9番出口そば。大型書店の館内トイレで清潔感あり。江南駅からは徒歩約10分"
+  },
+  {
+    id: 27, name: "TODAY'S GOURMET 494", name_ko: "투데이스 고메 494",
+    area: "漢南洞", category: "複合施設",
+    lat: 37.5351, lng: 127.0024,
+    hours: "不明", washlet: false,
+    notes: "漢江鎮駅・梨泰院駅そば。芸能人も住む高級住宅街の複合施設。地下1Fのトイレは「百貨店レベルの綺麗さ」と評される"
+  },
+  {
+    id: 28, name: "MINILINEビル 地下（nyu nyu）", name_ko: "미니라인 빌딩 지하",
+    area: "東大門", category: "ファッションビル",
+    lat: 37.5680, lng: 127.0099,
+    hours: "深夜も利用可", washlet: true,
+    notes: "2Fから階段で上がりエレベーターで地下へ。床の黄色い線がトイレへの目印。リニューアル済みでウォシュレット完備（韓国の雑居ビルでは珍しい）。深夜照明も完備"
+  }
+];
+
+// --- 地図初期化 ---
+let map, markersLayer = [];
+let mapInitialized = false;
+
+function initMap(spots) {
+  if (!mapInitialized) {
+    map = L.map('map').setView([37.5326, 127.0246], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 18
+    }).addTo(map);
+    mapInitialized = true;
+  }
+  markersLayer.forEach(m => map.removeLayer(m));
+  markersLayer = [];
+
+  spots.forEach(spot => {
+    const color = spot.washlet ? '#d94f43' : '#888';
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:28px;height:28px;background:${color};border:2.5px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 8px rgba(0,0,0,0.25)"></div>`,
+      iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -30]
+    });
+    const m = L.marker([spot.lat, spot.lng], { icon })
+      .addTo(map)
+      .bindPopup(`<b>${spot.name}</b><br><small>${spot.area} · ${spot.category}</small><br><small>${spot.notes}</small>`);
+    markersLayer.push(m);
+  });
+}
+
+function toggleMap() {
+  const container = document.getElementById('map-container');
+  const btn = document.getElementById('mapToggleBtn');
+  const isOpen = container.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
+  btn.textContent = isOpen ? '🗺️ 地図を閉じる' : '🗺️ 地図で全体を見る';
+
+  if (isOpen) {
+    initMap(currentFiltered);
+    setTimeout(() => map.invalidateSize(), 50);
+  }
+}
+
+// --- カード描画 ---
+let currentFiltered = SPOTS;
+
+function renderList(spots) {
+  currentFiltered = spots;
+  document.getElementById('count').textContent = spots.length;
+
+  if (mapInitialized && document.getElementById('map-container').classList.contains('open')) {
+    initMap(spots);
+  }
+
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+
+  spots.forEach(spot => {
+    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.name + ' ' + spot.name_ko + ' ソウル')}`;
+    const naverUrl = `https://map.naver.com/v5/search/${encodeURIComponent(spot.name_ko)}`;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <div class="card-name">${spot.name}</div>
+            <div class="card-name-ko">${spot.name_ko}</div>
+          </div>
+          <span class="area-badge">${spot.area}</span>
+        </div>
+        <div class="card-meta">
+          <span class="badge badge-cat">${spot.category}</span>
+          <span class="badge ${spot.washlet ? 'badge-washlet' : 'badge-no'}">
+            ${spot.washlet ? '🚿 ウォシュレットあり' : 'ウォシュレット不明'}
+          </span>
+        </div>
+        <div class="card-notes">${spot.notes}</div>
+        <div class="card-hours">🕐 ${spot.hours}</div>
+      </div>
+      <div class="card-actions">
+        <button class="action-btn" onclick="window.open('${googleMapsUrl}','_blank')">
+          📍 Google Maps
+        </button>
+        <button class="action-btn" onclick="window.open('${naverUrl}','_blank')">
+          🗺️ Naver Map
+        </button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+// --- フィルター ---
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const area = btn.dataset.area;
+    const filtered = area === 'all' ? SPOTS : SPOTS.filter(s => s.area === area);
+    renderList(filtered);
+  });
+});
+
+renderList(SPOTS);
+</script>
+</body>
+</html>
