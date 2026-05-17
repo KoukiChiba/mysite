@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" role="img" aria-label="jagged glowing asteroid">
+  <defs>
+    <radialGradient id="rock" cx="38%" cy="30%" r="72%">
+      <stop offset="0" stop-color="#aeb8d8"/>
+      <stop offset=".38" stop-color="#606b8f"/>
+      <stop offset=".72" stop-color="#252a45"/>
+      <stop offset="1" stop-color="#111527"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="18" y1="22" x2="112" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8fffff"/>
+      <stop offset=".55" stop-color="#7b5cff"/>
+      <stop offset="1" stop-color="#ff5cf7"/>
+    </linearGradient>
+    <filter id="rimGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <path d="M62 5 91 14l16 20 22 15-8 34 13 25-29 14-18 13-30-4-20 7-16-25-15-18 5-29-6-24 26-15Z" fill="url(#rim)" opacity=".9" filter="url(#rimGlow)"/>
+  <path d="M64 11 90 19l13 19 19 14-8 31 12 22-26 13-17 11-27-4-18 6-14-23-14-16 5-27-5-22 24-13Z" fill="url(#rock)" stroke="#090d1c" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M38 45 56 31l20 6M83 56l22 10-8 19M47 84l20 16 22-8M60 61l14 13" fill="none" stroke="#141a30" stroke-width="7" stroke-linecap="round" opacity=".65"/>
+  <circle cx="47" cy="58" r="8" fill="#161b2e" opacity=".75"/>
+  <circle cx="86" cy="37" r="6" fill="#151a2b" opacity=".68"/>
+  <circle cx="80" cy="91" r="10" fill="#171b2d" opacity=".72"/>
+</svg>

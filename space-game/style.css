@@ -1,9 +1,10 @@
 :root {
     --primary: #00f2ff;
     --accent: #ff00ea;
+    --gold: #ffd338;
     --bg-dark: #050505;
-    --glass: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass: rgba(4, 8, 24, 0.54);
+    --glass-border: rgba(125, 243, 255, 0.22);
 }
 
 * {
@@ -19,6 +20,7 @@ body {
     overflow: hidden;
     width: 100vw;
     height: 100vh;
+    text-rendering: geometricPrecision;
 }
 
 #app {
@@ -61,10 +63,13 @@ body {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
-    border-radius: 24px;
-    padding: 40px;
+    border-radius: 8px;
+    padding: 38px;
     text-align: center;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+        0 24px 70px rgba(0, 0, 0, 0.58),
+        0 0 44px rgba(0, 242, 255, 0.12);
     max-width: 90%;
     width: 400px;
     animation: fadeIn 0.8s ease-out;
@@ -72,12 +77,14 @@ body {
 
 .pixel-text {
     font-family: 'Press Start 2P', cursive;
-    font-size: 24px;
+    font-size: 23px;
     margin-bottom: 24px;
     background: linear-gradient(to right, var(--primary), var(--accent));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: 2px;
+    letter-spacing: 0;
+    line-height: 1.35;
+    text-shadow: 0 0 18px rgba(0, 242, 255, 0.2);
 }
 
 .description {
@@ -92,17 +99,18 @@ body {
     letter-spacing: 1px;
     margin-bottom: 32px;
     padding: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
-    border: 1px dashed var(--glass-border);
+    background: rgba(0, 242, 255, 0.07);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 242, 255, 0.18);
+    color: rgba(255, 255, 255, 0.86);
 }
 
 .btn-primary {
-    background: white;
-    color: black;
+    background: linear-gradient(135deg, #ffffff 0%, #a6f8ff 48%, #ffe6ff 100%);
+    color: #05101d;
     border: none;
     padding: 16px 32px;
-    border-radius: 12px;
+    border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -113,8 +121,8 @@ body {
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(255, 255, 255, 0.2);
-    background: var(--primary);
+    box-shadow: 0 10px 28px rgba(0, 242, 255, 0.24);
+    background: linear-gradient(135deg, var(--primary), var(--gold));
     color: black;
 }
 
@@ -133,11 +141,12 @@ body {
     background: var(--glass);
     backdrop-filter: blur(10px);
     padding: 10px 20px;
-    border-radius: 100px;
+    border-radius: 8px;
     border: 1px solid var(--glass-border);
     display: flex;
     align-items: center;
     gap: 12px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.28);
 }
 
 .label {
@@ -163,7 +172,7 @@ body {
     color: white;
     width: 44px;
     height: 44px;
-    border-radius: 50%;
+    border-radius: 8px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -174,7 +183,7 @@ body {
 
 .music-btn:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.1);
+    transform: translateY(-1px);
 }
 
 .music-btn.muted {
@@ -194,5 +203,22 @@ body {
     #game-info {
         padding: 0 20px;
         top: 20px;
+    }
+
+    .glass-panel {
+        padding: 28px 22px;
+    }
+
+    .pixel-text {
+        font-size: 18px;
+    }
+
+    .score-box, .time-box {
+        padding: 9px 12px;
+        gap: 8px;
+    }
+
+    .value {
+        font-size: 11px;
     }
 }

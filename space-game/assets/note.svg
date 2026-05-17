@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="glowing golden music note">
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="52%" r="48%">
+      <stop offset="0" stop-color="#fff7a6" stop-opacity=".9"/>
+      <stop offset=".5" stop-color="#ffd338" stop-opacity=".38"/>
+      <stop offset="1" stop-color="#ffb000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="28" y1="96" x2="86" y2="12" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff9b00"/>
+      <stop offset=".36" stop-color="#ffe266"/>
+      <stop offset=".68" stop-color="#fff8a8"/>
+      <stop offset="1" stop-color="#e89b00"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#halo)"/>
+  <path d="M48 81c7 8 3 20-11 25-15 5-29-1-31-10-2-10 9-20 24-22 5-1 9 0 13 1V25c0-4 2-7 6-8l43-10c5-1 9 2 9 7v55c6 0 11 2 14 6 6 8 1 20-12 25-15 6-29 0-32-9-2-9 6-19 20-23V34l-43 10Z" fill="url(#gold)" stroke="#6a3b00" stroke-width="5" stroke-linejoin="round" filter="url(#glow)"/>
+  <path d="M53 28 91 19M52 45l38-9" stroke="#fff8bc" stroke-width="5" stroke-linecap="round" opacity=".75"/>
+</svg>

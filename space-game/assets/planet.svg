@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 160" role="img" aria-label="distant ringed planet">
+  <defs>
+    <radialGradient id="planet" cx="40%" cy="32%" r="58%">
+      <stop offset="0" stop-color="#fff1bd"/>
+      <stop offset=".35" stop-color="#ff8ac7"/>
+      <stop offset=".68" stop-color="#6649ff"/>
+      <stop offset="1" stop-color="#1b1741"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="22" y1="98" x2="237" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#60f5ff" stop-opacity="0"/>
+      <stop offset=".25" stop-color="#9af9ff" stop-opacity=".68"/>
+      <stop offset=".55" stop-color="#ffe3ff" stop-opacity=".88"/>
+      <stop offset=".82" stop-color="#ff71de" stop-opacity=".52"/>
+      <stop offset="1" stop-color="#ff71de" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="softGlow" x="-30%" y="-50%" width="160%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <ellipse cx="130" cy="80" rx="118" ry="24" fill="none" stroke="url(#ring)" stroke-width="12" filter="url(#softGlow)"/>
+  <circle cx="130" cy="80" r="56" fill="url(#planet)" filter="url(#softGlow)"/>
+  <path d="M78 89c30 10 74 8 109-5" fill="none" stroke="#fff3ff" stroke-width="8" opacity=".18"/>
+  <path d="M64 85c55 19 139 5 183-20" fill="none" stroke="url(#ring)" stroke-width="8" opacity=".75"/>
+</svg>

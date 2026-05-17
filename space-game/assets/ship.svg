@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 120" role="img" aria-label="neon white space ship">
+  <defs>
+    <linearGradient id="body" x1="28" y1="62" x2="214" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f7fbff"/>
+      <stop offset=".48" stop-color="#9deaff"/>
+      <stop offset="1" stop-color="#f8fdff"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="138" y1="24" x2="188" y2="68" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e8ffff"/>
+      <stop offset=".5" stop-color="#48e9ff"/>
+      <stop offset="1" stop-color="#1b74ff"/>
+    </linearGradient>
+    <linearGradient id="flame" x1="0" y1="60" x2="55" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff5a2a" stop-opacity="0"/>
+      <stop offset=".45" stop-color="#ff8e24"/>
+      <stop offset=".75" stop-color="#ffe96e"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <filter id="cyanGlow" x="-30%" y="-60%" width="160%" height="220%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.0 0 0 0 0 0.85 0 0 0 0 1 0 0 0 .8 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="fireGlow" x="-60%" y="-100%" width="220%" height="300%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <path d="M4 54 60 40v40L4 66Z" fill="url(#flame)" filter="url(#fireGlow)"/>
+  <path d="M28 52h32v18H28c-8 0-8-18 0-18Z" fill="#31415f" stroke="#091324" stroke-width="5"/>
+  <path d="M56 56 92 19l64 9 72 30-16 16-118 17-38-16Z" fill="url(#body)" stroke="#08182f" stroke-width="6" stroke-linejoin="round" filter="url(#cyanGlow)"/>
+  <path d="M89 82 122 108h43l-39-35Z" fill="#8edcff" stroke="#08182f" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M91 39 118 9h39l-28 40Z" fill="#e9faff" stroke="#08182f" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M141 35c17 1 34 7 47 17l-13 14h-54l7-28c4-2 8-3 13-3Z" fill="url(#glass)" stroke="#08182f" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M202 58 232 65l-29 11-14-5Z" fill="#59e6ff" stroke="#08182f" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M82 63h72" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+  <path d="M103 49h12M128 78h18M157 77h11" stroke="#0a2d4f" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="98" cy="68" r="9" fill="#15305a" stroke="#76f5ff" stroke-width="4"/>
+</svg>
