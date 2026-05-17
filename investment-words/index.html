@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投資ことば辞典 | 株式・FX・暗号資産の用語学習</title>
+    <meta name="description" content="株式投資、FX、暗号資産、投資信託、税金、リスク管理の基本用語を、初心者にもわかる例と注意点つきで学べる用語サイトです。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Inter:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="#top" aria-label="投資ことば辞典 ホーム">
+            <span class="brand-mark">¥</span>
+            <span>投資ことば辞典</span>
+        </a>
+        <nav class="top-nav" aria-label="主要ナビゲーション">
+            <a href="#glossary">用語</a>
+            <a href="#starter">まず覚える</a>
+            <a href="#quiz">クイズ</a>
+        </nav>
+    </header>
+
+    <main id="top">
+        <section class="hero">
+            <div class="hero-copy">
+                <p class="eyebrow">株式・FX・暗号資産を横断して学ぶ</p>
+                <h1>投資判断の前に、言葉の意味を正しくつかむ。</h1>
+                <p class="lead">ニュース、アプリ、SNSで見かける投資用語を「一言」「例」「注意点」で整理。儲け方ではなく、勘違いとリスクを減らすための学習サイトです。</p>
+                <div class="hero-actions">
+                    <a class="primary-btn" href="#glossary"><i data-lucide="search"></i>用語を探す</a>
+                    <a class="secondary-btn" href="#quiz"><i data-lucide="circle-help"></i>理解度チェック</a>
+                </div>
+            </div>
+            <div class="hero-visual" aria-label="投資リテラシー学習のイメージ">
+                <div class="market-board">
+                    <div class="board-header">
+                        <span>Literacy Map</span>
+                        <span class="status-dot"></span>
+                    </div>
+                    <div class="asset-row">
+                        <span>株式</span>
+                        <strong>企業価値</strong>
+                        <small>配当 / PER / 決算</small>
+                    </div>
+                    <div class="asset-row">
+                        <span>FX</span>
+                        <strong>為替変動</strong>
+                        <small>金利 / レバレッジ</small>
+                    </div>
+                    <div class="asset-row">
+                        <span>暗号資産</span>
+                        <strong>高変動性</strong>
+                        <small>ウォレット / 取引所</small>
+                    </div>
+                    <div class="risk-meter">
+                        <div class="meter-label"><span>リスク理解</span><strong>72%</strong></div>
+                        <div class="meter-track"><span></span></div>
+                    </div>
+                </div>
+                <div class="note-card">
+                    <i data-lucide="shield-alert"></i>
+                    <span>レバレッジ、追証、税金は先に確認</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="notice" aria-label="注意事項">
+            <i data-lucide="info"></i>
+            <p>このサイトは投資教育を目的とした用語集です。特定の金融商品の売買、投資判断、利益を保証する助言は行いません。</p>
+        </section>
+
+        <section class="section" id="glossary">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Glossary</p>
+                    <h2>用語を検索する</h2>
+                </div>
+                <p>カテゴリで絞り込み、カードを開くと具体例・よくある誤解・関連語を確認できます。</p>
+            </div>
+
+            <div class="tool-panel">
+                <label class="search-box" for="searchInput">
+                    <i data-lucide="search"></i>
+                    <input id="searchInput" type="search" placeholder="例：レバレッジ、NISA、ロスカット">
+                </label>
+                <div class="category-tabs" id="categoryTabs" aria-label="カテゴリ絞り込み"></div>
+            </div>
+
+            <div class="result-meta">
+                <span id="resultCount"></span>
+                <button class="text-button" id="resetFilters" type="button">絞り込みを解除</button>
+            </div>
+
+            <div class="glossary-grid" id="glossaryGrid"></div>
+        </section>
+
+        <section class="section starter" id="starter">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Starter Pack</p>
+                    <h2>まず覚える12語</h2>
+                </div>
+                <p>最初は「商品名」よりも、損失の広がり方とコストを表す言葉から押さえるのが実用的です。</p>
+            </div>
+            <div class="starter-grid" id="starterGrid"></div>
+        </section>
+
+        <section class="section compare">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Compare</p>
+                    <h2>投資ジャンルの違い</h2>
+                </div>
+            </div>
+            <div class="compare-grid">
+                <article>
+                    <i data-lucide="building-2"></i>
+                    <h3>株式投資</h3>
+                    <p>企業の一部を保有する投資。業績、決算、配当、株主優待、市場心理などが価格に影響します。</p>
+                </article>
+                <article>
+                    <i data-lucide="repeat-2"></i>
+                    <h3>FX</h3>
+                    <p>通貨同士の交換レートに投資します。金利差や経済指標の影響を受け、レバレッジ管理が重要です。</p>
+                </article>
+                <article>
+                    <i data-lucide="blocks"></i>
+                    <h3>暗号資産</h3>
+                    <p>価格変動が大きく、技術・規制・流動性・保管方法の理解が必要です。秘密鍵の管理も重要です。</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section quiz" id="quiz">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Quiz</p>
+                    <h2>ミニクイズ</h2>
+                </div>
+                <p>用語を覚えたつもりになっていないか、短い問題で確認できます。</p>
+            </div>
+            <div class="quiz-panel">
+                <div class="quiz-top">
+                    <span id="quizProgress">1 / 5</span>
+                    <button class="text-button" id="restartQuiz" type="button">最初から</button>
+                </div>
+                <h3 id="quizQuestion"></h3>
+                <div class="answer-list" id="answerList"></div>
+                <div class="quiz-feedback" id="quizFeedback" aria-live="polite"></div>
+                <button class="primary-btn next-btn" id="nextQuestion" type="button">次の問題へ</button>
+            </div>
+        </section>
+    </main>
+
+    <aside class="detail-drawer" id="detailDrawer" aria-hidden="true">
+        <div class="drawer-backdrop" id="drawerBackdrop"></div>
+        <article class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+            <button class="icon-button close-button" id="closeDrawer" type="button" aria-label="閉じる"><i data-lucide="x"></i></button>
+            <span class="term-category" id="drawerCategory"></span>
+            <h2 id="drawerTitle"></h2>
+            <p class="drawer-one-line" id="drawerOneLine"></p>
+            <dl class="term-detail-list">
+                <div>
+                    <dt>具体例</dt>
+                    <dd id="drawerExample"></dd>
+                </div>
+                <div>
+                    <dt>注意点</dt>
+                    <dd id="drawerCaution"></dd>
+                </div>
+                <div>
+                    <dt>よくある勘違い</dt>
+                    <dd id="drawerMistake"></dd>
+                </div>
+            </dl>
+            <div>
+                <h3 class="related-title">関連語</h3>
+                <div class="related-tags" id="drawerRelated"></div>
+            </div>
+        </article>
+    </aside>
+
+    <footer class="site-footer">
+        <p>投資ことば辞典</p>
+        <p>学習用途のサイトです。最終判断は公式情報・専門家・最新の制度情報を確認してください。</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

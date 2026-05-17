@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prism Break | Static Canvas Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="game-wrap" aria-label="Prism Break game">
+      <canvas id="game" width="960" height="600"></canvas>
+
+      <div class="hud" aria-live="polite">
+        <div>
+          <span class="hud-label">SCORE</span>
+          <strong id="score">0</strong>
+        </div>
+        <div>
+          <span class="hud-label">COMBO</span>
+          <strong id="combo">x1</strong>
+        </div>
+        <div>
+          <span class="hud-label">LIVES</span>
+          <strong id="lives">3</strong>
+        </div>
+      </div>
+
+      <div id="panel" class="panel">
+        <p class="eyebrow">PRISM BREAK</p>
+        <h1>光を反射して、プリズムを割る。</h1>
+        <p class="lead">パドルを左右に動かし、エナジーボールを跳ね返して全てのブロックを壊します。青いブロックはワイド化、赤いブロックはボール加速。</p>
+        <div class="control-grid" aria-label="Controls">
+          <span>← → / A D</span>
+          <span>Mouse / Touch</span>
+          <span>Space pause</span>
+        </div>
+        <button id="start" type="button">Start</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
