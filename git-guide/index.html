@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Git &amp; GitHub 入門ガイド ✦ 初心者向け完全解説</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #FEFCF7;
+      --coral: #FF6455;
+      --teal: #00BFC8;
+      --yellow: #FFD23F;
+      --mint: #2ECC8A;
+      --navy: #0F172A;
+      --dark: #1E293B;
+      --text: #334155;
+      --text-light: #64748B;
+      --border: #E2E8F0;
+      --terminal-bg: #0D1117;
+      --terminal-green: #00FF88;
+      --terminal-text: #CDD5E0;
+      --terminal-comment: #8B949E;
+    }
+
+    body {
+      font-family: 'Hiragino Sans', 'Yu Gothic Medium', 'Yu Gothic', 'Meiryo', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.8;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--coral); border-radius: 3px; }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(254,252,247,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 2px solid var(--navy);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 58px;
+    }
+    .nav-logo { font-weight: 900; font-size: 1.1rem; color: var(--navy); display: flex; align-items: center; gap: 0.5rem; }
+    .nav-links { display: flex; gap: 1.25rem; list-style: none; }
+    .nav-links a { color: var(--text); text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: color .2s; }
+    .nav-links a:hover { color: var(--coral); }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 100px 2rem 5rem;
+      background: linear-gradient(135deg, #FEFCF7 0%, #FFF5F0 50%, #F0F9FF 100%);
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(255,100,85,.07) 0%, transparent 70%);
+      top: -80px; right: -80px; border-radius: 50%;
+    }
+    .hero::after {
+      content: ''; position: absolute;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(0,191,200,.07) 0%, transparent 70%);
+      bottom: 0; left: -80px; border-radius: 50%;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: var(--yellow); color: var(--navy);
+      font-size: .75rem; font-weight: 700; padding: .35rem 1rem;
+      border-radius: 100px; margin-bottom: 1.5rem;
+      border: 2px solid var(--navy); letter-spacing: .05em;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem,6vw,4.2rem); font-weight: 900;
+      color: var(--navy); line-height: 1.15; margin-bottom: 1.25rem;
+      position: relative; z-index: 1;
+    }
+    .hero h1 .accent { color: var(--coral); position: relative; display: inline-block; }
+    .hero h1 .accent::after {
+      content: ''; position: absolute; bottom: 3px; left: 0; right: 0;
+      height: 8px; background: var(--yellow); z-index: -1; transform: rotate(-1deg);
+    }
+    .hero-desc { font-size: 1.05rem; color: var(--text-light); max-width: 520px; margin: 0 auto 2.5rem; position: relative; z-index: 1; }
+    .hero-stats { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; z-index: 1; }
+    .hero-stat {
+      background: white; border: 2px solid var(--navy);
+      border-radius: 12px; padding: .6rem 1.1rem;
+      box-shadow: 3px 3px 0 var(--navy);
+      font-size: .85rem; font-weight: 600; color: var(--navy);
+    }
+    .scroll-hint {
+      position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: .4rem;
+      color: var(--text-light); font-size: .75rem;
+      animation: bounce 2s ease-in-out infinite;
+    }
+    @keyframes bounce {
+      0%,100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-8px); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .hero > * { animation: fadeInUp .6s ease both; }
+    .hero .hero-badge { animation-delay: .1s; }
+    .hero h1 { animation-delay: .2s; }
+    .hero-desc { animation-delay: .3s; }
+    .hero-stats { animation-delay: .4s; }
+
+    /* ── Divider ── */
+    .divider { width: 100%; height: 3px; background: linear-gradient(to right, var(--coral), var(--teal), var(--yellow)); border: none; margin: 0; }
+
+    /* ── Section ── */
+    .section { padding: 5rem 2rem; max-width: 1080px; margin: 0 auto; }
+    .section-wrapper-alt { background: linear-gradient(180deg,#F8F6FF 0%,#F0F9FF 100%); }
+    .section-wrapper-warm { background: linear-gradient(180deg,#FFF8F5 0%,#FFFBF0 100%); }
+    .section-label {
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: .6rem;
+    }
+    .section-title { font-size: clamp(1.6rem,4vw,2.3rem); font-weight: 900; color: var(--navy); margin-bottom: .8rem; line-height: 1.2; }
+    .section-desc { color: var(--text-light); font-size: .95rem; max-width: 580px; margin-bottom: 2.25rem; }
+
+    /* ── Cards ── */
+    .card {
+      background: white; border: 2px solid var(--navy); border-radius: 16px;
+      padding: 1.6rem; box-shadow: 4px 4px 0 var(--navy);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .card:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--navy); }
+    .card-icon { font-size: 2.25rem; margin-bottom: .9rem; display: block; }
+    .card-title { font-size: 1.05rem; font-weight: 800; color: var(--navy); margin-bottom: .4rem; }
+    .card-desc { color: var(--text); font-size: .875rem; line-height: 1.7; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 1.2rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 1.2rem; }
+
+    /* ── Terminal ── */
+    .terminal {
+      background: var(--terminal-bg); border-radius: 10px; overflow: hidden;
+      border: 2px solid var(--navy); box-shadow: 3px 3px 0 var(--navy); margin: .75rem 0;
+    }
+    .terminal-header {
+      background: #1C2333; padding: .55rem 1rem;
+      display: flex; align-items: center; gap: .45rem;
+    }
+    .terminal-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .terminal-dot.red { background: #FF5F56; }
+    .terminal-dot.yellow { background: #FFBD2E; }
+    .terminal-dot.green { background: #27C93F; }
+    .terminal-body {
+      padding: 1rem 1.25rem;
+      font-family: 'SF Mono','Fira Code','Consolas','Courier New',monospace;
+      font-size: .85rem; line-height: 2;
+    }
+    .terminal-line { display: flex; align-items: flex-start; gap: .45rem; flex-wrap: wrap; }
+    .prompt { color: var(--terminal-green); user-select: none; flex-shrink: 0; }
+    .cmd { color: #79C0FF; }
+    .arg { color: #FFA657; }
+    .str { color: #A5D6FF; }
+    .comment { color: var(--terminal-comment); font-style: italic; }
+    .output { color: var(--terminal-text); padding-left: 1.25rem; }
+    .error-text { color: #FF7B72; }
+    .success-text { color: #56D364; }
+
+    /* ── Command Cards ── */
+    .cmd-card {
+      background: white; border: 2px solid var(--navy); border-radius: 12px;
+      overflow: hidden; box-shadow: 3px 3px 0 var(--navy);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .cmd-card:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--navy); }
+    .cmd-card-header { padding: .9rem 1.2rem; display: flex; align-items: center; gap: .7rem; }
+    .cmd-tag { font-family: 'SF Mono','Fira Code',monospace; font-size: .85rem; font-weight: 700; background: var(--navy); color: white; padding: .2rem .65rem; border-radius: 6px; }
+    .cmd-card-body { padding: 0 1.2rem 1.2rem; }
+    .cmd-name { font-weight: 700; color: var(--navy); margin-bottom: .2rem; font-size: .95rem; }
+    .cmd-desc { font-size: .85rem; color: var(--text); line-height: 1.6; }
+
+    /* ── Steps ── */
+    .steps { display: flex; flex-direction: column; gap: 1rem; }
+    .step { display: flex; gap: 1.2rem; align-items: flex-start; }
+    .step-num {
+      width: 38px; height: 38px; border-radius: 50%; background: var(--coral);
+      color: white; font-weight: 800; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border: 2px solid var(--navy); box-shadow: 2px 2px 0 var(--navy);
+    }
+    .step-content { flex: 1; padding-top: .45rem; }
+    .step-title { font-weight: 700; color: var(--navy); margin-bottom: .2rem; }
+    .step-desc { font-size: .875rem; color: var(--text); }
+    .step-connector { width: 2px; height: 1rem; background: var(--coral); margin-left: 18px; }
+
+    /* ── Error Cards ── */
+    .error-card { background: white; border: 2px solid var(--navy); border-radius: 12px; overflow: hidden; box-shadow: 3px 3px 0 var(--navy); }
+    .error-card-header { background: #FFF0EE; padding: .9rem 1.2rem; border-bottom: 2px solid var(--navy); display: flex; align-items: center; gap: .7rem; }
+    .error-badge { background: var(--coral); color: white; font-size: .72rem; font-weight: 700; padding: .2rem .55rem; border-radius: 4px; white-space: nowrap; }
+    .error-title { font-weight: 700; color: var(--navy); font-size: .9rem; }
+    .error-card-body { padding: 1.2rem; }
+    .solution-label { font-size: .72rem; font-weight: 700; color: var(--mint); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .4rem; }
+
+    /* ── Compare Table ── */
+    .compare-table { width: 100%; border-collapse: collapse; background: white; border: 2px solid var(--navy); border-radius: 12px; overflow: hidden; box-shadow: 4px 4px 0 var(--navy); }
+    .compare-table th { background: var(--navy); color: white; padding: .9rem 1.2rem; text-align: left; font-size: .875rem; }
+    .compare-table td { padding: .8rem 1.2rem; border-bottom: 1px solid var(--border); font-size: .875rem; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table tr:nth-child(even) td { background: var(--bg); }
+
+    /* ── Highlight Box ── */
+    .highlight-box {
+      background: var(--yellow); border: 2px solid var(--navy);
+      border-radius: 12px; padding: 1.1rem 1.4rem;
+      box-shadow: 3px 3px 0 var(--navy);
+      display: flex; gap: .9rem; align-items: flex-start;
+    }
+    .highlight-box .icon { font-size: 1.4rem; flex-shrink: 0; }
+    .highlight-box p { font-size: .875rem; color: var(--dark); line-height: 1.7; }
+
+    /* ── Cheat Sheet ── */
+    .cheat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px,1fr)); gap: .7rem; }
+    .cheat-item { background: #1E293B; border: 2px solid #334155; border-radius: 10px; padding: .8rem 1rem; display: flex; flex-direction: column; gap: .3rem; }
+    .cheat-cmd { font-family: 'SF Mono','Fira Code',monospace; font-size: .8rem; font-weight: 700; background: #0F172A; padding: .25rem .5rem; border-radius: 4px; word-break: break-all; }
+    .cheat-desc { font-size: .78rem; color: #94A3B8; line-height: 1.5; }
+
+    code {
+      font-family: 'SF Mono','Fira Code',monospace;
+      background: #F1F5F9; color: var(--coral);
+      padding: .12em .38em; border-radius: 4px; font-size: .875em; border: 1px solid #E2E8F0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 2.5rem 2rem;
+      border-top: 2px solid var(--navy);
+      background: var(--navy); color: rgba(255,255,255,.55); font-size: .85rem;
+    }
+    footer a { color: var(--teal); text-decoration: none; }
+
+    /* ── Mobile Nav ── */
+    .nav-menu-btn {
+      display: none; background: none; border: 2px solid var(--navy);
+      border-radius: 6px; padding: .3rem .55rem; cursor: pointer; font-size: 1.1rem; line-height: 1;
+    }
+    .mobile-nav {
+      display: none; position: fixed; top: 58px; left: 0; right: 0; z-index: 99;
+      background: rgba(254,252,247,.97); backdrop-filter: blur(12px);
+      border-bottom: 2px solid var(--navy); padding: .75rem 1.5rem 1rem;
+      flex-direction: column; gap: .6rem;
+    }
+    .mobile-nav.open { display: flex; }
+    .mobile-nav a { color: var(--text); text-decoration: none; font-weight: 600; font-size: .95rem; padding: .3rem 0; border-bottom: 1px solid var(--border); }
+    .mobile-nav a:last-child { border-bottom: none; }
+
+    /* ── Table scroll wrapper ── */
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .nav-menu-btn { display: block; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .cheat-grid { grid-template-columns: repeat(2,1fr); }
+      .section { padding: 3rem 1.25rem; }
+    }
+
+    /* ── scroll-margin-top (固定ナビ分のオフセット) ── */
+    #what-is-git, #what-is-github, #commands, #repo-setup, #errors, #cheatsheet {
+      scroll-margin-top: 64px;
+    }
+
+    /* ── prefers-reduced-motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .hero > *, .scroll-hint { animation: none; }
+      .card, .cmd-card { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-logo">🌿 Git & GitHub 入門</div>
+  <ul class="nav-links">
+    <li><a href="#what-is-git">Gitとは</a></li>
+    <li><a href="#what-is-github">GitHubとは</a></li>
+    <li><a href="#commands">基本コマンド</a></li>
+    <li><a href="#repo-setup">リポジトリ作成</a></li>
+    <li><a href="#errors">よくあるエラー</a></li>
+    <li><a href="#cheatsheet">チートシート</a></li>
+  </ul>
+  <button class="nav-menu-btn" id="menuBtn" onclick="var n=document.getElementById('mobileNav');n.classList.toggle('open');this.setAttribute('aria-expanded',n.classList.contains('open'))" aria-label="メニュー" aria-expanded="false" aria-controls="mobileNav">☰</button>
+</nav>
+<div id="mobileNav" class="mobile-nav">
+  <a href="#what-is-git" onclick="this.closest('.mobile-nav').classList.remove('open');document.getElementById('menuBtn').setAttribute('aria-expanded','false')">Gitとは</a>
+  <a href="#what-is-github" onclick="this.closest('.mobile-nav').classList.remove('open');document.getElementById('menuBtn').setAttribute('aria-expanded','false')">GitHubとは</a>
+  <a href="#commands" onclick="this.closest('.mobile-nav').classList.remove('open');document.getElementById('menuBtn').setAttribute('aria-expanded','false')">基本コマンド</a>
+  <a href="#repo-setup" onclick="this.closest('.mobile-nav').classList.remove('open');document.getElementById('menuBtn').setAttribute('aria-expanded','false')">リポジトリ作成</a>
+  <a href="#errors" onclick="this.closest('.mobile-nav').classList.remove('open');document.getElementById('menuBtn').setAttribute('aria-expanded','false')">よくあるエラー</a>
+  <a href="#cheatsheet" onclick="this.closest('.mobile-nav').classList.remove('open');document.getElementById('menuBtn').setAttribute('aria-expanded','false')">チートシート</a>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <span class="hero-badge">🌱 初心者向け完全ガイド</span>
+  <h1>
+    <span class="accent">Git</span> と <span class="accent">GitHub</span> を<br>
+    ゼロから学ぼう
+  </h1>
+  <p class="hero-desc">
+    コードの変更履歴を管理し、チームで開発するための必須ツール。<br>
+    この1ページですべての基本が身につきます。
+  </p>
+  <div class="hero-stats">
+    <div class="hero-stat">🌿 Gitとは何か</div>
+    <div class="hero-stat">🐙 GitHubとの違い</div>
+    <div class="hero-stat">⌨️ 基本コマンド8選</div>
+    <div class="hero-stat">🚨 エラー対処法5選</div>
+  </div>
+  <div class="scroll-hint">
+    <span>スクロールして読む</span>
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <path d="M5 7l5 5 5-5" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- What is Git -->
+<div id="what-is-git">
+  <div class="section">
+    <span class="section-label" style="color:var(--coral);">◆ Section 01</span>
+    <h2 class="section-title">Gitとは何か？</h2>
+    <p class="section-desc">ファイルの変更履歴を管理する「バージョン管理システム」です。ゲームのセーブポイントのようなイメージで覚えましょう。</p>
+
+    <div class="grid-2" style="margin-bottom:1.5rem;">
+      <div class="card" style="background:#FFF5F3;">
+        <span class="card-icon">💾</span>
+        <div class="card-title">バージョン管理とは？</div>
+        <div class="card-desc">ファイルの「いつ・何を・誰が」変更したかを記録するシステム。間違えても過去の状態に戻せます。<br><br>「昨日のバージョンに戻したい！」というときに大活躍します。</div>
+      </div>
+      <div class="card" style="background:#F0FFFE;">
+        <span class="card-icon">🎮</span>
+        <div class="card-title">ゲームのセーブポイントと同じ</div>
+        <div class="card-desc">Gitの「コミット」はゲームのセーブポイントに相当します。<br><br>好きなセーブポイントに戻れるように、コードの特定の状態をいつでも復元できます。</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <span class="icon">💡</span>
+      <p><strong>ポイント：</strong>GitはPC上で動く「ローカルなツール」です。インターネット接続がなくても使えます。後で学ぶGitHubはGitの内容をネット上に保存・共有するためのサービスです。</p>
+    </div>
+
+    <div style="margin-top:2rem;">
+      <h3 style="font-weight:800;color:var(--navy);margin-bottom:1rem;font-size:1.05rem;">Gitの基本的な仕組み</h3>
+      <div class="grid-3">
+        <div class="card">
+          <span class="card-icon">📁</span>
+          <div class="card-title">ワーキングツリー</div>
+          <div class="card-desc">実際に編集している作業フォルダ。普段ファイルを編集する場所です。</div>
+        </div>
+        <div class="card">
+          <span class="card-icon">📋</span>
+          <div class="card-title">ステージングエリア</div>
+          <div class="card-desc">コミット前に「記録する変更」を選んで並べる準備スペース。</div>
+        </div>
+        <div class="card">
+          <span class="card-icon">🗃️</span>
+          <div class="card-title">リポジトリ（.git）</div>
+          <div class="card-desc">変更履歴が保存される場所。<code>git init</code>で作成されます。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- What is GitHub -->
+<div id="what-is-github" class="section-wrapper-alt">
+  <div class="section">
+    <span class="section-label" style="color:var(--teal);">◆ Section 02</span>
+    <h2 class="section-title">GitHubとは何か？</h2>
+    <p class="section-desc">GitのリポジトリをインターネットでホスティングするWebサービス。コードのクラウド保存＋チームコラボレーションの場所です。</p>
+
+    <div class="table-scroll" style="margin-bottom:2rem;">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>比較項目</th>
+          <th>🌿 Git</th>
+          <th>🐙 GitHub</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>種類</strong></td><td>ソフトウェア（ツール）</td><td>Webサービス</td></tr>
+        <tr><td><strong>動く場所</strong></td><td>あなたのPC（ローカル）</td><td>インターネット（クラウド）</td></tr>
+        <tr><td><strong>主な用途</strong></td><td>変更履歴の管理・記録</td><td>コードの共有・チーム開発</td></tr>
+        <tr><td><strong>インターネット</strong></td><td>不要</td><td>必要</td></tr>
+        <tr><td><strong>アカウント</strong></td><td>不要</td><td>必要（無料あり）</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card" style="background:#F0FFFE;">
+        <span class="card-icon">☁️</span>
+        <div class="card-title">バックアップの役割</div>
+        <div class="card-desc">PCが壊れてもGitHubにpushしてあればコードを失いません。いつでもどこからでもclone（ダウンロード）できます。</div>
+      </div>
+      <div class="card" style="background:#FFFBF0;">
+        <span class="card-icon">👥</span>
+        <div class="card-title">チーム開発の中心</div>
+        <div class="card-desc">複数人で同じリポジトリを編集・管理できます。Pull Request（プルリクエスト）でコードレビューも簡単。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- Basic Commands -->
+<div id="commands">
+  <div class="section">
+    <span class="section-label" style="color:var(--mint);">◆ Section 03</span>
+    <h2 class="section-title">基本コマンド8選</h2>
+    <p class="section-desc">まずはこの8つを覚えましょう。これだけで日常の開発は十分できます。</p>
+
+    <div class="grid-2">
+
+      <div class="cmd-card">
+        <div class="cmd-card-header" style="background:#F0FFF8;">
+          <span class="cmd-tag" style="background:#059669;">init</span>
+          <span style="font-size:1.2rem;">🌱</span>
+        </div>
+        <div class="cmd-card-body">
+          <div class="cmd-name">リポジトリを新規作成</div>
+          <div class="cmd-desc" style="margin-bottom:.7rem;">現在のフォルダをGitの管理下に置きます。最初に一度だけ実行します。</div>
+          <div class="terminal">
+            <div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">init</span></div>
+              <div class="terminal-line"><span class="success-text output">Initialized empty Git repository in .git/</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header" style="background:#FFF5F3;">
+          <span class="cmd-tag" style="background:#DC2626;">add</span>
+          <span style="font-size:1.2rem;">📋</span>
+        </div>
+        <div class="cmd-card-body">
+          <div class="cmd-name">変更をステージングに追加</div>
+          <div class="cmd-desc" style="margin-bottom:.7rem;">コミットに含めたい変更を「ステージングエリア」に追加します。</div>
+          <div class="terminal">
+            <div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">add</span><span class="str">index.html</span><span class="comment"># ファイル指定</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">add</span><span class="str">.</span><span class="comment"># 全変更を追加</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header" style="background:#F0F9FF;">
+          <span class="cmd-tag" style="background:#2563EB;">commit</span>
+          <span style="font-size:1.2rem;">💾</span>
+        </div>
+        <div class="cmd-card-body">
+          <div class="cmd-name">変更を記録（セーブ）</div>
+          <div class="cmd-desc" style="margin-bottom:.7rem;">ステージングの変更を履歴に記録します。メッセージは何を変更したか書きましょう。</div>
+          <div class="terminal">
+            <div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">commit</span><span class="arg">-m</span><span class="str">"ヘッダーを追加"</span></div>
+              <div class="terminal-line"><span class="success-text output">[main abc1234] ヘッダーを追加</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header" style="background:#F5F3FF;">
+          <span class="cmd-tag" style="background:#7C3AED;">push</span>
+          <span style="font-size:1.2rem;">⬆️</span>
+        </div>
+        <div class="cmd-card-body">
+          <div class="cmd-name">GitHubにアップロード</div>
+          <div class="cmd-desc" style="margin-bottom:.7rem;">ローカルのコミットをGitHubのリモートリポジトリに送信します。</div>
+          <div class="terminal">
+            <div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">push</span><span class="str">origin</span><span class="str">main</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header" style="background:#FFF0FE;">
+          <span class="cmd-tag" style="background:#A21CAF;">pull</span>
+          <span style="font-size:1.2rem;">⬇️</span>
+        </div>
+        <div class="cmd-card-body">
+          <div class="cmd-name">GitHubから最新を取得</div>
+          <div class="cmd-desc" style="margin-bottom:.7rem;">リモートの最新変更をローカルに取り込みます。共有ブランチに他の人の更新があるか確認して、必要なときに実行しましょう。</div>
+          <div class="terminal">
+            <div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">pull</span><span class="str">origin</span><span class="str">main</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header" style="background:#F0FFF8;">
+          <span class="cmd-tag" style="background:#047857;">clone</span>
+          <span style="font-size:1.2rem;">📥</span>
+        </div>
+        <div class="cmd-card-body">
+          <div class="cmd-name">リポジトリをコピー</div>
+          <div class="cmd-desc" style="margin-bottom:.7rem;">GitHubにあるリポジトリを自分のPCにまるごとダウンロードします。</div>
+          <div class="terminal">
+            <div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">clone</span><span class="str" style="font-size:.8rem;">https://github.com/user/repo.git</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header" style="background:#FFFBF0;">
+          <span class="cmd-tag" style="background:#B45309;">branch</span>
+          <span style="font-size:1.2rem;">🌿</span>
+        </div>
+        <div class="cmd-card-body">
+          <div class="cmd-name">ブランチを作成・確認</div>
+          <div class="cmd-desc" style="margin-bottom:.7rem;">本流（main）から分岐した「作業用コピー」を作ります。失敗しても本流に影響なし！</div>
+          <div class="terminal">
+            <div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">branch</span><span class="str">feature/login</span><span class="comment"># 作成</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">switch</span><span class="str">feature/login</span><span class="comment"># 移動</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-card-header" style="background:#F0F9FF;">
+          <span class="cmd-tag" style="background:#0369A1;">merge</span>
+          <span style="font-size:1.2rem;">🔀</span>
+        </div>
+        <div class="cmd-card-body">
+          <div class="cmd-name">ブランチを統合</div>
+          <div class="cmd-desc" style="margin-bottom:.7rem;">作業ブランチで完成した変更を main ブランチに取り込みます。</div>
+          <div class="terminal">
+            <div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">switch</span><span class="str">main</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">merge</span><span class="str">feature/login</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- Repo Setup -->
+<div id="repo-setup" class="section-wrapper-warm">
+  <div class="section">
+    <span class="section-label" style="color:#B45309;">◆ Section 04</span>
+    <h2 class="section-title">GitHubでリポジトリを作る手順</h2>
+    <p class="section-desc">実際にGitHubにコードをアップロードするまでの流れを確認しましょう。</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">GitHubでリポジトリを新規作成</div>
+          <div class="step-desc">github.com にログイン → 右上の「+」→「New repository」→ リポジトリ名を入力 → 「Create repository」をクリック</div>
+          <p style="font-size:.8rem;color:var(--coral);margin-top:.5rem;font-weight:600;">⚠️ 「Add a README file」「Add .gitignore」「Choose a license」はチェックせず空のまま作成してください。チェックすると次のステップでpushが失敗します。</p>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+
+      <div class="step">
+        <div class="step-num" style="background:var(--teal);">2</div>
+        <div class="step-content">
+          <div class="step-title">ローカルフォルダをGitで初期化</div>
+          <div class="step-desc">プロジェクトフォルダに移動して実行。<code>git add .</code> の前に <strong>.gitignore</strong> を作成して、パスワードや秘密鍵・<code>node_modules</code> などをGit管理から除外しましょう。</div>
+          <div class="terminal" style="margin-top:.75rem;">
+            <div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">init</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">branch</span><span class="arg">-M</span><span class="str">main</span><span class="comment"># ブランチ名をmainに統一</span></div>
+              <div class="terminal-line"><span class="comment"># .gitignore を作成してから add する</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">add</span><span class="str">.</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">commit</span><span class="arg">-m</span><span class="str">"first commit"</span></div>
+            </div>
+          </div>
+          <p style="font-size:.8rem;color:var(--text-light);margin-top:.6rem;line-height:1.6;">💡 <strong>.gitignore とは？</strong> Gitの管理から除外したいファイルを記述するファイルです。<code>.env</code>（環境変数）、秘密鍵、<code>node_modules/</code> などを必ず記載しましょう。<a href="https://www.toptal.com/developers/gitignore" target="_blank" rel="noopener" style="color:var(--teal);">gitignore.io</a> でテンプレートを自動生成できます。</p>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+
+      <div class="step">
+        <div class="step-num" style="background:#059669;">3</div>
+        <div class="step-content">
+          <div class="step-title">GitHubのリポジトリを「リモート」として登録</div>
+          <div class="step-desc">ローカルとGitHubを接続します（URLはGitHubのページに表示されています）</div>
+          <div class="terminal" style="margin-top:.75rem;">
+            <div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">remote</span><span class="arg">add</span><span class="str">origin</span><span class="str" style="font-size:.8rem;">https://github.com/あなた/リポジトリ名.git</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+
+      <div class="step">
+        <div class="step-num" style="background:#7C3AED;">4</div>
+        <div class="step-content">
+          <div class="step-title">GitHubにプッシュ（アップロード）</div>
+          <div class="step-desc">ローカルのコミット履歴をGitHubに送信します。<strong>HTTPS接続の場合、Gitパスワード認証は廃止済み</strong>です。初心者には <strong>GitHub CLI</strong> が最も簡単です。</div>
+          <div class="terminal" style="margin-top:.6rem;margin-bottom:.6rem;">
+            <div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-body" style="padding:.7rem 1rem;">
+              <div class="terminal-line"><span class="comment"># GitHub CLI（推奨・最も簡単）</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">gh</span><span class="arg">auth</span><span class="str">login</span><span class="comment"># ブラウザで認証するだけ</span></div>
+            </div>
+          </div>
+          <p style="font-size:.8rem;color:var(--text-light);line-height:1.6;">CLIを使わない場合は <strong>Git Credential Manager</strong> または <strong>Personal Access Token（PAT）</strong> も使えます。PATはGitHubの Settings → Developer settings → Personal access tokens で発行できます。</p>
+          <div class="terminal" style="margin-top:.75rem;">
+            <div class="terminal-header"><div class="terminal-dot red"></div><div class="terminal-dot yellow"></div><div class="terminal-dot green"></div></div>
+            <div class="terminal-body">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">push</span><span class="arg">-u</span><span class="str">origin</span><span class="str">main</span></div>
+              <div class="terminal-line"><span class="success-text output">✓ Branch 'main' set up to track 'origin/main'</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box" style="margin-top:2rem;background:#E0F7FF;border-color:var(--teal);">
+      <span class="icon">🎉</span>
+      <p><strong>完了！</strong> これでGitHubのページを開くと、あなたのコードがGitHubに保存されています（Privateリポジトリの場合は自分だけが閲覧できます）。次回からは <code>git add → git commit → git push</code> の流れだけでOKです。</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- Errors -->
+<div id="errors">
+  <div class="section">
+    <span class="section-label" style="color:var(--coral);">◆ Section 05</span>
+    <h2 class="section-title">よくあるエラーと対処法</h2>
+    <p class="section-desc">初心者がつまずきやすいエラーをまとめました。エラーが出ても慌てず対処しましょう。</p>
+
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+
+      <div class="error-card">
+        <div class="error-card-header">
+          <span class="error-badge">エラー</span>
+          <div class="error-title">Please tell me who you are（コミット時）</div>
+        </div>
+        <div class="error-card-body">
+          <div class="terminal" style="margin-bottom:.9rem;">
+            <div class="terminal-body" style="padding:.7rem 1rem;">
+              <div class="terminal-line"><span class="error-text">Author identity unknown</span></div>
+              <div class="terminal-line"><span class="error-text">*** Please tell me who you are.</span></div>
+            </div>
+          </div>
+          <div class="solution-label">✅ 解決方法</div>
+          <p style="font-size:.875rem;color:var(--text);margin-bottom:.65rem;">Gitにあなたの名前とメールを登録します（初回セットアップ）</p>
+          <div class="terminal">
+            <div class="terminal-body" style="padding:.7rem 1rem;">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">config</span><span class="arg">--global</span><span class="str">user.name</span><span class="str">"Your Name"</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">config</span><span class="arg">--global</span><span class="str">user.email</span><span class="str">"you@example.com"</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="error-card">
+        <div class="error-card-header">
+          <span class="error-badge">エラー</span>
+          <div class="error-title">nothing to commit, working tree clean</div>
+        </div>
+        <div class="error-card-body">
+          <div class="solution-label">✅ 解決方法</div>
+          <p style="font-size:.875rem;color:var(--text);">これはエラーではなく「記録すべき変更がない」という正常なメッセージです。本当に変更がない場合は問題ありません。心当たりがあるのにこのメッセージが出る場合は次の点を確認しましょう。</p>
+          <ul style="font-size:.85rem;color:var(--text);line-height:2;padding-left:1.5rem;margin-top:.5rem;">
+            <li>ファイルを保存し忘れていないか（エディタで Ctrl+S / Cmd+S）</li>
+            <li>そのファイルが <code>.gitignore</code> の対象になっていないか</li>
+            <li><code>git add</code> をしたフォルダが正しいか（別のフォルダを編集していないか）</li>
+          </ul>
+          <div class="terminal" style="margin-top:.7rem;">
+            <div class="terminal-body" style="padding:.7rem 1rem;">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">status</span><span class="comment"># 現在の状態を確認</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="error-card">
+        <div class="error-card-header">
+          <span class="error-badge">エラー</span>
+          <div class="error-title">CONFLICT (content): Merge conflict in ファイル名</div>
+        </div>
+        <div class="error-card-body">
+          <div class="solution-label">✅ 解決方法</div>
+          <p style="font-size:.875rem;color:var(--text);margin-bottom:.65rem;">同じ箇所を2人が異なる内容に変更した「コンフリクト」です。ファイルを開いて <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> と <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> の間を手動で編集し、残したい内容だけ残してから再コミットします。</p>
+          <div class="terminal">
+            <div class="terminal-body" style="padding:.7rem 1rem;">
+              <div class="terminal-line"><span class="comment"># ファイルを編集してコンフリクトを解消後...</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">add</span><span class="str">.</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">commit</span><span class="arg">-m</span><span class="str">"コンフリクト解消"</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="error-card">
+        <div class="error-card-header">
+          <span class="error-badge">エラー</span>
+          <div class="error-title">rejected — Updates were rejected (push時)</div>
+        </div>
+        <div class="error-card-body">
+          <div class="solution-label">✅ 解決方法</div>
+          <p style="font-size:.875rem;color:var(--text);margin-bottom:.65rem;">GitHubの方が新しい変更を持っています。<code>--rebase</code> オプション付きで最新を取得してからpushします。単純な <code>git pull</code> は意図しないマージコミットが生まれることがあります。<code>--rebase</code> は履歴を直線的に保ちやすいのが特徴です。</p>
+          <div class="terminal">
+            <div class="terminal-body" style="padding:.7rem 1rem;">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">pull</span><span class="arg">--rebase</span><span class="str">origin</span><span class="str">main</span></div>
+              <div class="terminal-line"><span class="comment output"># コンフリクトがなければそのままpush</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">push</span><span class="str">origin</span><span class="str">main</span></div>
+            </div>
+          </div>
+          <p style="font-size:.8rem;color:var(--text-light);margin-top:.75rem;line-height:1.6;">⚠️ <strong>コンフリクトが発生した場合：</strong>ファイルを手動で編集して解消した後、<code>git commit</code> ではなく <code>git rebase --continue</code> で rebase を再開します。</p>
+          <div class="terminal">
+            <div class="terminal-body" style="padding:.7rem 1rem;">
+              <div class="terminal-line"><span class="comment"># コンフリクト解消後...</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">add</span><span class="str">.</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">rebase</span><span class="arg">--continue</span><span class="comment"># commitではなくこちら</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="error-card">
+        <div class="error-card-header">
+          <span class="error-badge">エラー</span>
+          <div class="error-title">fatal: not a git repository</div>
+        </div>
+        <div class="error-card-body">
+          <div class="solution-label">✅ 解決方法</div>
+          <p style="font-size:.875rem;color:var(--text);margin-bottom:.65rem;">Gitで管理されていないフォルダでコマンドを実行しています。正しいフォルダに移動するか、<code>git init</code> を実行しましょう。</p>
+          <div class="terminal">
+            <div class="terminal-body" style="padding:.7rem 1rem;">
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">cd</span><span class="str">あなたのプロジェクトフォルダ</span></div>
+              <div class="terminal-line"><span class="prompt">$</span><span class="cmd">git</span><span class="arg">init</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- Cheat Sheet -->
+<div id="cheatsheet" style="background:var(--navy);">
+  <div class="section">
+    <span class="section-label" style="color:var(--yellow);">⚡ Section 06</span>
+    <h2 class="section-title" style="color:white;">コマンド チートシート</h2>
+    <p class="section-desc" style="color:rgba(255,255,255,.55);">よく使うコマンドをまとめました。ブックマークして手元に置いておきましょう。</p>
+
+    <div class="cheat-grid">
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#00FF88;">git init</div><div class="cheat-desc">リポジトリを新規作成</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#00FF88;">git status</div><div class="cheat-desc">現在の状態を確認</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#00FF88;">git add .</div><div class="cheat-desc">全変更をステージングへ</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#00FF88;">git add &lt;ファイル&gt;</div><div class="cheat-desc">特定ファイルをステージングへ</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#FFA657;">git commit -m ""</div><div class="cheat-desc">変更を記録（メッセージ付き）</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#FFA657;">git log --oneline</div><div class="cheat-desc">コミット履歴を簡潔に表示</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#79C0FF;">git push origin main</div><div class="cheat-desc">GitHubにアップロード</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#79C0FF;">git pull origin main</div><div class="cheat-desc">GitHubから最新を取得</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#A5D6FF;">git clone &lt;URL&gt;</div><div class="cheat-desc">リポジトリをコピー</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#A5D6FF;">git branch</div><div class="cheat-desc">ブランチ一覧を表示</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#A5D6FF;">git branch &lt;名前&gt;</div><div class="cheat-desc">新しいブランチを作成</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#A5D6FF;">git switch &lt;名前&gt;</div><div class="cheat-desc">ブランチを切り替え</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#D2A8FF;">git merge &lt;名前&gt;</div><div class="cheat-desc">ブランチをマージ</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#D2A8FF;">git diff</div><div class="cheat-desc">変更内容の差分を確認</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#56D364;">git stash</div><div class="cheat-desc">変更を一時退避</div></div>
+      <div class="cheat-item"><div class="cheat-cmd" style="color:#56D364;">git stash pop</div><div class="cheat-desc">退避した変更を戻す</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <p style="margin-bottom:.4rem;">🌿 Git & GitHub 入門ガイド</p>
+  <p>初心者のためのバージョン管理入門 · ブックマークしていつでも参照しよう</p>
+  <p style="margin-top:.75rem;">
+    <a href="https://git-scm.com/docs" target="_blank" rel="noopener">Git公式ドキュメント</a>
+    &nbsp;·&nbsp;
+    <a href="https://docs.github.com/ja" target="_blank" rel="noopener">GitHub Docs（日本語）</a>
+  </p>
+</footer>
+
+</body>
+</html>
