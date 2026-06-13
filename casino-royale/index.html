@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casino Royale - マカオ・マニラ カジノ練習サイト</title>
+  <meta name="description" content="マカオ・マニラのカジノを完全再現。バカラ、ブラックジャック、ルーレット、シックボー、ドラゴンタイガーを無料で練習できます。">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .hero {
+      min-height: 60vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 3rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 30%, rgba(212,175,55,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.8rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .hero h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 900;
+      color: var(--gold);
+      line-height: 1.1;
+      text-shadow: 0 0 60px rgba(212,175,55,0.4), 0 0 120px rgba(212,175,55,0.2);
+      margin-bottom: 0.3rem;
+    }
+
+    .hero h2 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1rem, 3vw, 1.8rem);
+      color: var(--text-muted);
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero p {
+      max-width: 550px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      font-size: 0.95rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .floating-cards {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .floating-card {
+      position: absolute;
+      font-size: 3rem;
+      opacity: 0.04;
+      animation: floatCard linear infinite;
+    }
+
+    @keyframes floatCard {
+      from { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.04; }
+      90% { opacity: 0.04; }
+      to { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+    }
+
+    .features-bar {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      padding: 1.5rem;
+      border-top: 1px solid rgba(212,175,55,0.1);
+      border-bottom: 1px solid rgba(212,175,55,0.1);
+      background: rgba(0,0,0,0.3);
+      flex-wrap: wrap;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .feature-item span:first-child { font-size: 1.2rem; }
+
+    .games-section {
+      padding: 3rem 0;
+    }
+
+    .games-section-title {
+      font-family: 'Cinzel', serif;
+      text-align: center;
+      font-size: 1.8rem;
+      color: var(--gold);
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    .games-section-sub {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .game-card-banner.baccarat {
+      background: linear-gradient(135deg, #1a0a2e, #2d1b69, #1a0a2e);
+    }
+    .game-card-banner.blackjack {
+      background: linear-gradient(135deg, #0d2618, #1a4a2e, #0d2618);
+    }
+    .game-card-banner.roulette {
+      background: linear-gradient(135deg, #2e0d0d, #6b1a1a, #2e0d0d);
+    }
+    .game-card-banner.sicbo {
+      background: linear-gradient(135deg, #0d1a2e, #1a3a5c, #0d1a2e);
+    }
+    .game-card-banner.dragontiger {
+      background: linear-gradient(135deg, #2e1a0d, #6b3a1a, #2e1a0d);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      border-top: 1px solid rgba(212,175,55,0.1);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      line-height: 1.8;
+    }
+
+    .footer a { color: var(--gold-dark); }
+  </style>
+</head>
+<body>
+
+  <div id="header-mount"></div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="floating-cards" id="floatingCards"></div>
+    <div class="hero-eyebrow">🎰 Macau · Manila · Practice</div>
+    <h1>Casino Royale</h1>
+    <h2>本場のゲームを、無料で体験</h2>
+    <p>マカオ・マニラのカジノで遊ぶ前に、5つの定番ゲームをしっかり練習。ルール・戦略を身につけて、本番に備えよう。</p>
+    <div class="hero-cta">
+      <a href="baccarat.html" class="btn btn-gold">今すぐプレイ</a>
+      <a href="#games" class="btn btn-outline">ゲーム一覧を見る</a>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <div class="features-bar">
+    <div class="feature-item"><span>🆓</span><span>完全無料</span></div>
+    <div class="feature-item"><span>🎓</span><span>ルール解説付き</span></div>
+    <div class="feature-item"><span>🪙</span><span>仮想チップ$10,000</span></div>
+    <div class="feature-item"><span>📱</span><span>スマホ対応</span></div>
+    <div class="feature-item"><span>🇲🇴</span><span>マカオ対応ゲーム</span></div>
+    <div class="feature-item"><span>🇵🇭</span><span>マニラ対応ゲーム</span></div>
+  </div>
+
+  <!-- Games -->
+  <section class="games-section" id="games">
+    <h2 class="games-section-title">ゲームを選ぶ</h2>
+    <p class="games-section-sub">5種類のカジノゲームをリアルな環境で練習できます</p>
+
+    <div class="games-grid">
+      <a href="baccarat.html" class="game-card">
+        <div class="game-card-banner baccarat">🃏</div>
+        <span class="game-card-badge">人気No.1</span>
+        <div class="game-card-body">
+          <div class="game-card-sub">Baccarat</div>
+          <div class="game-card-title">バカラ</div>
+          <p class="game-card-desc">マカオ売上の約90%を占める王様のゲーム。プレイヤーとバンカーのどちらが9に近いかを予想するシンプルなゲーム。</p>
+        </div>
+      </a>
+
+      <a href="blackjack.html" class="game-card">
+        <div class="game-card-banner blackjack">🂡</div>
+        <span class="game-card-badge">戦略ゲーム</span>
+        <div class="game-card-body">
+          <div class="game-card-sub">Blackjack</div>
+          <div class="game-card-title">ブラックジャック</div>
+          <p class="game-card-desc">ディーラーに勝つために21に近い手札を作る。Hit・Stand・Doubleなど戦略が勝率を左右する知的なゲーム。</p>
+        </div>
+      </a>
+
+      <a href="roulette.html" class="game-card">
+        <div class="game-card-banner roulette">🎡</div>
+        <span class="game-card-badge">多彩な賭け方</span>
+        <div class="game-card-body">
+          <div class="game-card-sub">Roulette</div>
+          <div class="game-card-title">ルーレット</div>
+          <p class="game-card-desc">ヨーロピアンスタイル。数字・赤黒・奇偶など多彩なベット。ボールが止まる場所を予想する伝統的なゲーム。</p>
+        </div>
+      </a>
+
+      <a href="sicbo.html" class="game-card">
+        <div class="game-card-banner sicbo">🎲</div>
+        <span class="game-card-badge">アジア定番</span>
+        <div class="game-card-body">
+          <div class="game-card-sub">Sic Bo / 大小</div>
+          <div class="game-card-title">シックボー</div>
+          <p class="game-card-desc">3つのサイコロの出目を予想する中国発のゲーム。大（11〜17）・小（4〜10）のシンプルな賭けから多彩なベットまで楽しめる。</p>
+        </div>
+      </a>
+
+      <a href="dragontiger.html" class="game-card">
+        <div class="game-card-banner dragontiger">🐉</div>
+        <span class="game-card-badge">超シンプル</span>
+        <div class="game-card-body">
+          <div class="game-card-sub">Dragon Tiger</div>
+          <div class="game-card-title">ドラゴンタイガー</div>
+          <p class="game-card-desc">ドラゴンとタイガーに1枚ずつカードを配り、大きい方が勝ち。マニラ・東南アジアのカジノで特に人気の超シンプルゲーム。</p>
+        </div>
+      </a>
+
+      <a href="slot.html" class="game-card">
+        <div class="game-card-banner" style="background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);">🎰</div>
+        <span class="game-card-badge">世界共通</span>
+        <div class="game-card-body">
+          <div class="game-card-sub">Slot Machine</div>
+          <div class="game-card-title">スロットマシン</div>
+          <p class="game-card-desc">ボタンを押すだけ！世界中のカジノで最も手軽なゲーム。絵柄を揃えてジャックポットを狙おう。初心者が最初に触れるゲームNo.1。</p>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>🎰 Casino Royale — 練習専用サイト | このサイトは実際のギャンブルを助長するものではありません</p>
+    <p style="margin-top:0.5rem">仮想通貨のみ使用 · ギャンブル依存症相談窓口: <a href="tel:0570-011-101">0570-011-101</a></p>
+  </footer>
+
+  <script src="js/casino.js"></script>
+  <script>
+    // Header
+    document.getElementById('header-mount').innerHTML = buildHeader('index.html');
+
+    // Floating cards animation
+    const symbols = ['🃏', '🂠', '♠', '♥', '♦', '♣', '🎲', '🎰'];
+    const fc = document.getElementById('floatingCards');
+    for (let i = 0; i < 15; i++) {
+      const el = document.createElement('div');
+      el.className = 'floating-card';
+      el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      el.style.left = Math.random() * 100 + '%';
+      el.style.animationDuration = (8 + Math.random() * 12) + 's';
+      el.style.animationDelay = -(Math.random() * 20) + 's';
+      el.style.fontSize = (2 + Math.random() * 3) + 'rem';
+      fc.appendChild(el);
+    }
+  </script>
+</body>
+</html>

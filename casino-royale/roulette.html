@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ルーレット | Casino Royale</title>
+  <meta name="description" content="ヨーロピアンルーレットを無料練習。赤黒・奇偶・数字など多彩なベット。">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .roulette-layout {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 700px) {
+      .roulette-layout { grid-template-columns: 1fr; }
+    }
+
+    /* Wheel */
+    .wheel-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    canvas#rouletteWheel {
+      border-radius: 50%;
+      box-shadow: 0 0 40px rgba(212,175,55,0.3), 0 0 0 4px var(--gold-dark);
+    }
+
+    .ball-number {
+      font-family: 'Cinzel', serif;
+      font-size: 3rem;
+      font-weight: 900;
+      text-align: center;
+      min-width: 80px;
+      padding: 0.5rem 1rem;
+      border: 2px solid rgba(212,175,55,0.3);
+      border-radius: var(--radius);
+      background: rgba(0,0,0,0.5);
+    }
+
+    /* Betting Table */
+    .bet-table {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .number-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 2px;
+      margin-bottom: 0.5rem;
+    }
+
+    .num-cell {
+      aspect-ratio: 1;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+      min-height: 32px;
+    }
+
+    .num-cell.red { background: rgba(192,57,43,0.5); color: #fff; }
+    .num-cell.black { background: rgba(30,30,30,0.8); color: #fff; }
+    .num-cell.green { background: rgba(39,174,96,0.6); color: #fff; grid-column: span 12; height: 28px; }
+
+    .num-cell:hover { filter: brightness(1.4); transform: scale(1.1); z-index: 1; }
+    .num-cell.has-bet { box-shadow: 0 0 0 2px var(--gold); filter: brightness(1.3); }
+
+    .num-chip {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--gold);
+      color: #1a1a00;
+      font-size: 0.55rem;
+      font-weight: 700;
+      padding: 1px 3px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .num-cell.has-bet .num-chip { display: block; }
+
+    .outside-bets {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.4rem;
+    }
+
+    .outside-bets-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.4rem;
+    }
+
+    .out-bet {
+      background: rgba(0,0,0,0.4);
+      border: 2px solid rgba(212,175,55,0.15);
+      border-radius: var(--radius);
+      padding: 0.6rem 0.4rem;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .out-bet:hover { border-color: rgba(212,175,55,0.5); background: rgba(212,175,55,0.05); }
+    .out-bet.has-bet { border-color: var(--gold); }
+
+    .out-bet-name {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.05em;
+    }
+
+    .out-bet-odds {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .out-bet-amt {
+      font-size: 0.7rem;
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .out-bet.red-bet { border-color: rgba(192,57,43,0.4); }
+    .out-bet.black-bet { border-color: rgba(100,100,100,0.4); }
+    .out-bet.red-bet.has-bet { border-color: #c0392b; box-shadow: 0 0 10px rgba(192,57,43,0.3); }
+
+    .total-bet-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 1rem;
+      background: rgba(0,0,0,0.4);
+      border-radius: var(--radius);
+      border: 1px solid rgba(212,175,55,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div id="header-mount"></div>
+
+  <div class="page-hero">
+    <h1>ルーレット</h1>
+    <p>ROULETTE — 伝統の回転盤に賭ける</p>
+  </div>
+
+  <div class="game-container" style="max-width:1000px;">
+    <div class="stats-bar">
+      <div class="stat-item"><div class="stat-label">残高</div><div class="stat-value" id="balDisplay">$10,000</div></div>
+      <div class="stat-item"><div class="stat-label">ベット総額</div><div class="stat-value" id="totalBetDisplay">$0</div></div>
+      <div class="stat-item"><div class="stat-label">前回の数字</div><div class="stat-value" id="lastNumDisplay">—</div></div>
+      <div class="stat-item"><div class="stat-label">ゲーム数</div><div class="stat-value" id="gameCountDisplay">0</div></div>
+    </div>
+
+    <div class="game-table">
+      <div class="roulette-layout">
+        <!-- Wheel -->
+        <div class="wheel-container">
+          <canvas id="rouletteWheel" width="200" height="200"></canvas>
+          <div class="ball-number" id="ballNumber">?</div>
+          <button class="btn btn-gold" onclick="spin()" id="spinBtn" style="width:100%;max-width:200px;">
+            🎡 SPIN
+          </button>
+          <button class="btn btn-danger" onclick="clearAllBets()" style="width:100%;max-width:200px;">
+            クリア
+          </button>
+        </div>
+
+        <!-- Betting Table -->
+        <div class="bet-table">
+          <!-- Chip selector -->
+          <div style="display:flex;justify-content:center; margin-bottom:0.5rem;">
+            <div class="chip-selector" id="chipSelector">
+              <div class="chip chip-1" data-value="1">$1</div>
+              <div class="chip chip-5" data-value="5">$5</div>
+              <div class="chip chip-25" data-value="25">$25</div>
+              <div class="chip chip-100" data-value="100">$100</div>
+              <div class="chip chip-500" data-value="500">$500</div>
+            </div>
+          </div>
+
+          <!-- Zero -->
+          <div class="num-cell green" id="cell-0" onclick="betNumber(0)">
+            0 — ZERO (35:1)
+            <span class="num-chip" id="chip-0"></span>
+          </div>
+
+          <!-- Number grid -->
+          <div class="number-grid" id="numberGrid"></div>
+
+          <!-- Outside bets row 1 -->
+          <div class="outside-bets">
+            <div class="out-bet" id="bet-1to12" onclick="betOutside('1to12')">
+              <div class="out-bet-name">1st 12</div>
+              <div class="out-bet-odds">1〜12 (2:1)</div>
+              <div class="out-bet-amt" id="amt-1to12">$0</div>
+            </div>
+            <div class="out-bet" id="bet-13to24" onclick="betOutside('13to24')">
+              <div class="out-bet-name">2nd 12</div>
+              <div class="out-bet-odds">13〜24 (2:1)</div>
+              <div class="out-bet-amt" id="amt-13to24">$0</div>
+            </div>
+            <div class="out-bet" id="bet-25to36" onclick="betOutside('25to36')">
+              <div class="out-bet-name">3rd 12</div>
+              <div class="out-bet-odds">25〜36 (2:1)</div>
+              <div class="out-bet-amt" id="amt-25to36">$0</div>
+            </div>
+          </div>
+
+          <!-- Outside bets row 2 -->
+          <div class="outside-bets-2">
+            <div class="out-bet red-bet" id="bet-red" onclick="betOutside('red')">
+              <div class="out-bet-name">🔴 RED 赤</div>
+              <div class="out-bet-odds">1:1</div>
+              <div class="out-bet-amt" id="amt-red">$0</div>
+            </div>
+            <div class="out-bet black-bet" id="bet-black" onclick="betOutside('black')">
+              <div class="out-bet-name">⚫ BLACK 黒</div>
+              <div class="out-bet-odds">1:1</div>
+              <div class="out-bet-amt" id="amt-black">$0</div>
+            </div>
+          </div>
+
+          <div class="outside-bets">
+            <div class="out-bet" id="bet-odd" onclick="betOutside('odd')">
+              <div class="out-bet-name">ODD 奇数</div>
+              <div class="out-bet-odds">1:1</div>
+              <div class="out-bet-amt" id="amt-odd">$0</div>
+            </div>
+            <div class="out-bet" id="bet-even" onclick="betOutside('even')">
+              <div class="out-bet-name">EVEN 偶数</div>
+              <div class="out-bet-odds">1:1</div>
+              <div class="out-bet-amt" id="amt-even">$0</div>
+            </div>
+            <div class="out-bet" id="bet-low" onclick="betOutside('low')">
+              <div class="out-bet-name">LOW 1〜18</div>
+              <div class="out-bet-odds">1:1</div>
+              <div class="out-bet-amt" id="amt-low">$0</div>
+            </div>
+          </div>
+
+          <div id="resultArea"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rules-panel">
+      <h3>📖 ルーレットのルール（完全版）</h3>
+      <ul>
+        <li><strong style="color:var(--gold)">【目的】</strong> 回転するホイールにボールを投げ、どの番号・エリアで止まるかを予想してベットする。</li>
+        <li><strong style="color:var(--gold)">【ヨーロピアンとアメリカン】</strong> このサイトはヨーロピアン式（0が1つ）。アメリカン式は0と00があり、ハウスエッジが約2倍になるため不利。マカオ・マニラはヨーロピアン式が多い。</li>
+        <li><strong style="color:var(--gold)">【インサイドベット（高配当・高リスク）】</strong><br>
+          ・Straight（一点がけ）: 特定の1数字 → <strong style="color:#f0d060">35:1</strong><br>
+          ※このサイトでは全36数字＋0にベット可能
+        </li>
+        <li><strong style="color:var(--gold)">【アウトサイドベット（低配当・低リスク）】</strong><br>
+          ・Red（赤）/ Black（黒）: 1:1<br>
+          ・Odd（奇数）/ Even（偶数）: 1:1<br>
+          ・Low（1〜18）/ High（19〜36）: 1:1<br>
+          ・1st Dozen（1〜12）/ 2nd Dozen（13〜24）/ 3rd Dozen（25〜36）: 2:1
+        </li>
+        <li><strong style="color:var(--gold)">【赤・黒の番号】</strong> 赤: 1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36（18個）/ 黒: 2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35（18個）</li>
+        <li><strong style="color:var(--gold)">【0が出たとき】</strong> アウトサイドベット（赤/黒/奇偶/ローハイ/ダズン）はすべて負け。0への一点がけは35:1。これがカジノの利益源（ハウスエッジ約2.7%）。</li>
+        <li><strong style="color:var(--gold)">【複数同時ベット】</strong> 異なるエリアに同時にベットできる。例：赤にベット＋ダズン1にベット＋7番に一点がけなど、組み合わせは自由。</li>
+        <li><strong style="color:var(--gold)">【期待値の考え方】</strong> どのベットも理論的な期待値はほぼ同じ（ハウスエッジ約2.7%）。高配当を狙うか、コツコツ回すかは好み次第。</li>
+        <li><strong style="color:var(--gold)">【おすすめの練習法】</strong> まずは赤/黒のみでゲームの流れを掴む。慣れたらダズンベットや一点がけに挑戦しよう。</li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="js/casino.js"></script>
+  <script>
+    document.getElementById('header-mount').innerHTML = buildHeader('roulette.html');
+
+    const RED_NUMBERS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+    let numberBets = {}; // { 0: 50, 7: 100, ... }
+    let outsideBets = {}; // { red: 100, odd: 50, ... }
+    let spinning = false;
+    let gameCount = 0;
+
+    // Build number grid
+    function buildGrid() {
+      const grid = document.getElementById('numberGrid');
+      // Numbers in roulette table order: rows of 3, columns 1-12
+      // Layout: 1,4,7,10,13,16,19,22,25,28,31,34 (top row)
+      //         2,5,8,11,14,17,20,23,26,29,32,35 (mid)
+      //         3,6,9,12,15,18,21,24,27,30,33,36 (bottom)
+      const rows = [
+        [1,4,7,10,13,16,19,22,25,28,31,34],
+        [2,5,8,11,14,17,20,23,26,29,32,35],
+        [3,6,9,12,15,18,21,24,27,30,33,36]
+      ];
+
+      // We need to display in column order for a proper roulette table
+      // Actually let's do rows for simplicity
+      for (const row of rows) {
+        for (const n of row) {
+          const isRed = RED_NUMBERS.includes(n);
+          const cell = document.createElement('div');
+          cell.className = `num-cell ${isRed ? 'red' : 'black'}`;
+          cell.id = `cell-${n}`;
+          cell.onclick = () => betNumber(n);
+          cell.innerHTML = `${n}<span class="num-chip" id="chip-${n}"></span>`;
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    function betNumber(n) {
+      if (spinning) return;
+      const balance = getBalance();
+      if (selectedChip > balance) { showToast('残高が足りません！'); return; }
+      numberBets[n] = (numberBets[n] || 0) + selectedChip;
+      setBalance(balance - selectedChip);
+      updateNumberCell(n);
+      updateTotalBetDisplay();
+    }
+
+    function betOutside(type) {
+      if (spinning) return;
+      const balance = getBalance();
+      if (selectedChip > balance) { showToast('残高が足りません！'); return; }
+      outsideBets[type] = (outsideBets[type] || 0) + selectedChip;
+      setBalance(balance - selectedChip);
+      updateOutsideBet(type);
+      updateTotalBetDisplay();
+    }
+
+    function updateNumberCell(n) {
+      const cell = document.getElementById(`cell-${n}`);
+      const chip = document.getElementById(`chip-${n}`);
+      if (!cell || !chip) return;
+      const amt = numberBets[n] || 0;
+      cell.classList.toggle('has-bet', amt > 0);
+      chip.textContent = amt > 0 ? '$'+amt : '';
+    }
+
+    function updateOutsideBet(type) {
+      const el = document.getElementById(`bet-${type}`);
+      const amt = document.getElementById(`amt-${type}`);
+      if (!el || !amt) return;
+      const val = outsideBets[type] || 0;
+      el.classList.toggle('has-bet', val > 0);
+      amt.textContent = '$' + val.toLocaleString();
+    }
+
+    function getTotalBet() {
+      return Object.values(numberBets).reduce((s,v)=>s+v,0) +
+             Object.values(outsideBets).reduce((s,v)=>s+v,0);
+    }
+
+    function updateTotalBetDisplay() {
+      document.getElementById('totalBetDisplay').textContent = '$' + getTotalBet().toLocaleString();
+    }
+
+    function clearAllBets() {
+      if (spinning) return;
+      const refund = getTotalBet();
+      setBalance(getBalance() + refund);
+      numberBets = {};
+      outsideBets = {};
+      // Reset all cells
+      for (let i = 0; i <= 36; i++) {
+        const c = document.getElementById(`cell-${i}`);
+        const ch = document.getElementById(`chip-${i}`);
+        if (c) { c.classList.remove('has-bet'); }
+        if (ch) ch.textContent = '';
+      }
+      ['red','black','odd','even','low','1to12','13to24','25to36'].forEach(t => {
+        const el = document.getElementById(`bet-${t}`);
+        const am = document.getElementById(`amt-${t}`);
+        if (el) el.classList.remove('has-bet');
+        if (am) am.textContent = '$0';
+      });
+      updateTotalBetDisplay();
+    }
+
+    // Draw wheel
+    function drawWheel(rotation = 0) {
+      const canvas = document.getElementById('rouletteWheel');
+      const ctx = canvas.getContext('2d');
+      const cx = 100, cy = 100, r = 97;
+      const numbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+      const n = numbers.length;
+      const angle = (2 * Math.PI) / n;
+
+      ctx.clearRect(0,0,200,200);
+
+      numbers.forEach((num, i) => {
+        const start = rotation + i * angle;
+        const end = start + angle;
+
+        // Segment
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, start, end);
+        ctx.closePath();
+        ctx.fillStyle = num === 0 ? '#27ae60' : RED_NUMBERS.includes(num) ? '#c0392b' : '#1a1a1a';
+        ctx.fill();
+        ctx.strokeStyle = '#8a6a00';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Number label
+        const mid = start + angle / 2;
+        const tx = cx + (r * 0.75) * Math.cos(mid);
+        const ty = cy + (r * 0.75) * Math.sin(mid);
+        ctx.save();
+        ctx.translate(tx, ty);
+        ctx.rotate(mid + Math.PI / 2);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 8px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(num, 0, 0);
+        ctx.restore();
+      });
+
+      // Center circle
+      ctx.beginPath();
+      ctx.arc(cx, cy, 15, 0, 2 * Math.PI);
+      ctx.fillStyle = '#0a0a0f';
+      ctx.fill();
+      ctx.strokeStyle = var_gold();
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Pointer at top
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - r - 3);
+      ctx.lineTo(cx - 6, cy - r + 10);
+      ctx.lineTo(cx + 6, cy - r + 10);
+      ctx.closePath();
+      ctx.fillStyle = var_gold();
+      ctx.fill();
+    }
+
+    function var_gold() { return '#d4af37'; }
+
+    async function spin() {
+      if (getTotalBet() === 0) { showToast('先にベットしてください'); return; }
+      if (spinning) return;
+      spinning = true;
+      document.getElementById('spinBtn').disabled = true;
+      document.getElementById('resultArea').innerHTML = '';
+
+      const totalRotation = (Math.PI * 2) * (8 + Math.random() * 5);
+      const duration = 4000;
+      const start = performance.now();
+      let currentRotation = 0;
+
+      const result = Math.floor(Math.random() * 37); // 0-36
+
+      function animate(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 4);
+        currentRotation = eased * totalRotation;
+        drawWheel(currentRotation);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          document.getElementById('ballNumber').textContent = result;
+          document.getElementById('ballNumber').style.color =
+            result === 0 ? '#27ae60' : RED_NUMBERS.includes(result) ? '#e74c3c' : '#ccc';
+          document.getElementById('lastNumDisplay').textContent = result;
+          calculateResult(result);
+          spinning = false;
+          document.getElementById('spinBtn').disabled = false;
+          gameCount++;
+          document.getElementById('gameCountDisplay').textContent = gameCount;
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function calculateResult(result) {
+      let payout = 0;
+      let totalWon = 0;
+
+      // Number bets
+      Object.entries(numberBets).forEach(([num, bet]) => {
+        if (parseInt(num) === result) {
+          payout += bet * 36;
+          totalWon += bet * 35;
+        }
+      });
+
+      // Outside bets
+      if (result > 0) { // 0 loses all outside bets
+        const isRed = RED_NUMBERS.includes(result);
+        const isOdd = result % 2 !== 0;
+        const isLow = result <= 18;
+
+        if (outsideBets.red && isRed) { payout += outsideBets.red * 2; totalWon += outsideBets.red; }
+        if (outsideBets.black && !isRed) { payout += outsideBets.black * 2; totalWon += outsideBets.black; }
+        if (outsideBets.odd && isOdd) { payout += outsideBets.odd * 2; totalWon += outsideBets.odd; }
+        if (outsideBets.even && !isOdd) { payout += outsideBets.even * 2; totalWon += outsideBets.even; }
+        if (outsideBets.low && isLow) { payout += outsideBets.low * 2; totalWon += outsideBets.low; }
+        if (outsideBets['1to12'] && result >= 1 && result <= 12) { payout += outsideBets['1to12'] * 3; totalWon += outsideBets['1to12'] * 2; }
+        if (outsideBets['13to24'] && result >= 13 && result <= 24) { payout += outsideBets['13to24'] * 3; totalWon += outsideBets['13to24'] * 2; }
+        if (outsideBets['25to36'] && result >= 25 && result <= 36) { payout += outsideBets['25to36'] * 3; totalWon += outsideBets['25to36'] * 2; }
+      }
+
+      setBalance(getBalance() + Math.floor(payout));
+
+      const totalBet = getTotalBet();
+      const netProfit = Math.floor(payout) - totalBet;
+      const won = payout > 0;
+
+      let color = result === 0 ? '🟢' : RED_NUMBERS.includes(result) ? '🔴' : '⚫';
+      let msg = `${color} ${result}`;
+
+      if (won) {
+        msg += ` — WIN +$${totalWon.toLocaleString()}`;
+      } else {
+        msg += ` — LOSE -$${totalBet.toLocaleString()}`;
+      }
+
+      document.getElementById('resultArea').innerHTML = `
+        <div class="result-message ${won ? 'result-win' : 'result-lose'}" style="margin-top:1rem;">
+          ${msg}
+        </div>`;
+
+      document.getElementById('balDisplay').textContent = '$' + getBalance().toLocaleString();
+      updateBalanceDisplays();
+
+      // Clear bets after result
+      setTimeout(() => {
+        numberBets = {};
+        outsideBets = {};
+        clearAllBets();
+      }, 200);
+    }
+
+    buildGrid();
+    drawWheel(0);
+    initChipSelector('chipSelector');
+    document.getElementById('header-mount').innerHTML = buildHeader('roulette.html');
+  </script>
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>シックボー（大小） | Casino Royale</title>
+  <meta name="description" content="シックボー（大小）をオンラインで無料練習。3つのサイコロで大小・合計・特定の目を予想。">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .dice-area {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: var(--radius);
+      margin: 1rem 0;
+    }
+
+    .dice {
+      width: 72px;
+      height: 72px;
+      background: #f8f8f8;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.8rem;
+      box-shadow: 4px 4px 12px rgba(0,0,0,0.6), inset 0 0 8px rgba(0,0,0,0.05);
+      transition: transform 0.1s;
+      cursor: default;
+    }
+
+    .total-display {
+      font-family: 'Cinzel', serif;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--gold);
+      text-align: center;
+      min-width: 80px;
+    }
+
+    .bet-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin: 1rem 0;
+    }
+
+    .bet-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+      margin: 0.5rem 0;
+    }
+
+    .bet-grid-6 {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.4rem;
+      margin: 0.5rem 0;
+    }
+
+    .sb-bet {
+      background: rgba(0,0,0,0.4);
+      border: 2px solid rgba(212,175,55,0.15);
+      border-radius: var(--radius);
+      padding: 0.8rem 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      position: relative;
+    }
+
+    .sb-bet:hover { border-color: rgba(212,175,55,0.5); background: rgba(212,175,55,0.05); }
+    .sb-bet.has-bet { border-color: var(--gold); background: rgba(212,175,55,0.08); }
+
+    .sb-bet.big-small { padding: 1.2rem 0.5rem; }
+
+    .sb-bet .bet-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.2rem;
+    }
+
+    .sb-bet .bet-desc {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .sb-bet .bet-odds {
+      font-size: 0.75rem;
+      color: var(--gold-dark);
+      font-weight: 700;
+    }
+
+    .sb-bet .bet-amt {
+      font-size: 0.8rem;
+      color: var(--gold);
+      font-weight: 700;
+      margin-top: 0.3rem;
+    }
+
+    .sb-bet.big { background: rgba(192,57,43,0.15); border-color: rgba(192,57,43,0.3); }
+    .sb-bet.small { background: rgba(41,128,185,0.15); border-color: rgba(41,128,185,0.3); }
+    .sb-bet.big.has-bet { border-color: #c0392b; box-shadow: 0 0 15px rgba(192,57,43,0.3); }
+    .sb-bet.small.has-bet { border-color: #2980b9; box-shadow: 0 0 15px rgba(41,128,185,0.3); }
+
+    .sb-bet .emoji { font-size: 1.5rem; margin-bottom: 0.3rem; }
+
+    .total-bet-zone {
+      grid-column: span 2;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.4rem;
+    }
+
+    .total-bet-cell {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(212,175,55,0.15);
+      border-radius: 8px;
+      padding: 0.4rem;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      position: relative;
+    }
+
+    .total-bet-cell:hover { border-color: var(--gold); }
+    .total-bet-cell.has-bet { border-color: var(--gold); background: rgba(212,175,55,0.1); }
+
+    .total-bet-cell .cell-num {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .total-bet-cell .cell-odds {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .triple-bet {
+      background: rgba(142,68,173,0.15);
+      border-color: rgba(142,68,173,0.3) !important;
+    }
+    .triple-bet.has-bet { border-color: #9b59b6 !important; box-shadow: 0 0 15px rgba(142,68,173,0.3) !important; }
+  </style>
+</head>
+<body>
+  <div id="header-mount"></div>
+
+  <div class="page-hero">
+    <h1>シックボー（大小）</h1>
+    <p>SIC BO — 3つのサイコロで運を試す</p>
+  </div>
+
+  <div class="game-container">
+    <div class="stats-bar">
+      <div class="stat-item"><div class="stat-label">残高</div><div class="stat-value" id="balDisplay">$10,000</div></div>
+      <div class="stat-item"><div class="stat-label">ベット総額</div><div class="stat-value" id="totalBetDisplay">$0</div></div>
+      <div class="stat-item"><div class="stat-label">勝率</div><div class="stat-value" id="winRateDisplay">—</div></div>
+      <div class="stat-item"><div class="stat-label">ゲーム数</div><div class="stat-value" id="gameCountDisplay">0</div></div>
+    </div>
+
+    <div class="game-table">
+      <!-- Dice -->
+      <div class="dice-area">
+        <div class="dice" id="dice1">🎲</div>
+        <div class="dice" id="dice2">🎲</div>
+        <div class="dice" id="dice3">🎲</div>
+        <div>
+          <div style="font-size:0.7rem;color:var(--text-muted);text-align:center;margin-bottom:0.3rem;">合計</div>
+          <div class="total-display" id="totalDisplay">?</div>
+        </div>
+      </div>
+
+      <div id="resultArea"></div>
+
+      <div class="gold-divider"></div>
+
+      <!-- Big / Small -->
+      <div class="section-title">大 / 小 (Even Money)</div>
+      <div class="bet-grid">
+        <div class="sb-bet big big-small" id="bet-big" onclick="placeSbBet('big')">
+          <div class="emoji">🔴</div>
+          <div class="bet-name">大 BIG</div>
+          <div class="bet-desc">合計 11〜17</div>
+          <div class="bet-odds">配当 1:1</div>
+          <div class="bet-amt" id="amt-big">$0</div>
+        </div>
+        <div class="sb-bet small big-small" id="bet-small" onclick="placeSbBet('small')">
+          <div class="emoji">🔵</div>
+          <div class="bet-name">小 SMALL</div>
+          <div class="bet-desc">合計 4〜10</div>
+          <div class="bet-odds">配当 1:1</div>
+          <div class="bet-amt" id="amt-small">$0</div>
+        </div>
+      </div>
+
+      <!-- Triple -->
+      <div class="section-title">トリプル（ゾロ目）</div>
+      <div class="bet-grid-6">
+        <div class="sb-bet triple-bet" id="bet-triple1" onclick="placeSbBet('triple1')">
+          <div class="bet-name">1⚀</div>
+          <div class="bet-odds">180:1</div>
+          <div class="bet-amt" id="amt-triple1">$0</div>
+        </div>
+        <div class="sb-bet triple-bet" id="bet-triple2" onclick="placeSbBet('triple2')">
+          <div class="bet-name">2⚁</div>
+          <div class="bet-odds">180:1</div>
+          <div class="bet-amt" id="amt-triple2">$0</div>
+        </div>
+        <div class="sb-bet triple-bet" id="bet-triple3" onclick="placeSbBet('triple3')">
+          <div class="bet-name">3⚂</div>
+          <div class="bet-odds">180:1</div>
+          <div class="bet-amt" id="amt-triple3">$0</div>
+        </div>
+        <div class="sb-bet triple-bet" id="bet-triple4" onclick="placeSbBet('triple4')">
+          <div class="bet-name">4⚃</div>
+          <div class="bet-odds">180:1</div>
+          <div class="bet-amt" id="amt-triple4">$0</div>
+        </div>
+        <div class="sb-bet triple-bet" id="bet-triple5" onclick="placeSbBet('triple5')">
+          <div class="bet-name">5⚄</div>
+          <div class="bet-odds">180:1</div>
+          <div class="bet-amt" id="amt-triple5">$0</div>
+        </div>
+        <div class="sb-bet triple-bet" id="bet-triple6" onclick="placeSbBet('triple6')">
+          <div class="bet-name">6⚅</div>
+          <div class="bet-odds">180:1</div>
+          <div class="bet-amt" id="amt-triple6">$0</div>
+        </div>
+      </div>
+
+      <!-- Total bets -->
+      <div class="section-title">合計数ベット</div>
+      <div class="bet-grid-3" id="totalBets"></div>
+
+      <!-- Chip + Action -->
+      <div class="gold-divider"></div>
+      <div class="section-title">チップを選択</div>
+      <div style="display:flex;justify-content:center; margin-bottom:1rem;">
+        <div class="chip-selector" id="chipSelector">
+          <div class="chip chip-1" data-value="1">$1</div>
+          <div class="chip chip-5" data-value="5">$5</div>
+          <div class="chip chip-25" data-value="25">$25</div>
+          <div class="chip chip-100" data-value="100">$100</div>
+          <div class="chip chip-500" data-value="500">$500</div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-danger" onclick="clearAllBets()">クリア</button>
+        <button class="btn btn-gold" onclick="rollDice()" id="rollBtn">🎲 ROLL サイコロを振る</button>
+      </div>
+    </div>
+
+    <div class="rules-panel">
+      <h3>📖 シックボー（大小）のルール（完全版）</h3>
+      <ul>
+        <li><strong style="color:var(--gold)">【目的】</strong> 振った3つのサイコロの出目・合計・組み合わせを予想してベットする。中国発祥のゲームで「大小（ダイシャオ）」とも呼ばれる。</li>
+        <li><strong style="color:var(--gold)">【大（Big）】</strong> 3つの合計が11〜17 → 配当1:1。ただし3ゾロ目（111,222,333,444,555,666）が出ると「大」でも負け。確率は約48.6%。</li>
+        <li><strong style="color:var(--gold)">【小（Small）】</strong> 3つの合計が4〜10 → 配当1:1。こちらも3ゾロ目が出ると負け。確率は約48.6%。ゾロ目はカジノの利益源（ハウスエッジ約2.78%）。</li>
+        <li><strong style="color:var(--gold)">【トリプル（Any Triple）】</strong> 特定の3ゾロ目（例：全部3の目）が出ると <strong style="color:#f0d060">180:1</strong> の超高配当。6種類の中から特定を当てる。確率は1/216（約0.46%）。</li>
+        <li><strong style="color:var(--gold)">【合計数ベット】</strong> 3つのサイコロの合計数（4〜17）に賭ける。オッズは合計数によって異なる：<br>
+          合計4か17 → 60:1<br>
+          合計5か16 → 30:1<br>
+          合計6か15 → 17:1<br>
+          合計7か14 → 12:1<br>
+          合計8か13 → 8:1<br>
+          合計9〜12 → 6:1
+        </li>
+        <li><strong style="color:var(--gold)">【サイコロの確率】</strong> 合計3はゾロ目のみ（不可）。合計4は3通り、合計5は6通りと、真ん中に近いほど出やすい正規分布。合計10・11が最も出やすい。</li>
+        <li><strong style="color:var(--gold)">【ベット組み合わせ】</strong> 複数のエリアに同時ベット可能。例：大にベット＋合計15にベットで、15が出た場合は大と合計15の両方が当たる。</li>
+        <li><strong style="color:var(--gold)">【おすすめの練習法】</strong> まず大/小のみでゲームに慣れる。確率が高く長く遊べる。余裕が出たら合計数ベットで高配当を狙おう。</li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="js/casino.js"></script>
+  <script>
+    document.getElementById('header-mount').innerHTML = buildHeader('sicbo.html');
+
+    const DICE_EMOJI = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+    // Total odds: 4→60:1, 5→30:1, 6→17:1, 7→12:1, 8→8:1, 9→6:1, 10→6:1, 11→6:1, 12→6:1, 13→8:1, 14→12:1, 15→17:1, 16→30:1, 17→60:1
+    const TOTAL_ODDS = {4:60,5:30,6:17,7:12,8:8,9:6,10:6,11:6,12:6,13:8,14:12,15:17,16:30,17:60};
+
+    let bets = {};
+    let stats = { wins: 0, total: 0 };
+    let rolling = false;
+
+    // Build total bets UI
+    function buildTotalBets() {
+      const container = document.getElementById('totalBets');
+      for (let total = 4; total <= 17; total++) {
+        const div = document.createElement('div');
+        div.className = 'sb-bet';
+        div.id = `bet-total${total}`;
+        div.onclick = () => placeSbBet(`total${total}`);
+        div.innerHTML = `
+          <div class="bet-name">${total}</div>
+          <div class="bet-odds">${TOTAL_ODDS[total]}:1</div>
+          <div class="bet-amt" id="amt-total${total}">$0</div>`;
+        container.appendChild(div);
+      }
+    }
+
+    function placeSbBet(type) {
+      if (rolling) return;
+      const balance = getBalance();
+      if (selectedChip > balance) { showToast('残高が足りません！'); return; }
+      bets[type] = (bets[type] || 0) + selectedChip;
+      setBalance(balance - selectedChip);
+      updateBetUI(type);
+      updateTotalDisplay();
+    }
+
+    function updateBetUI(type) {
+      const el = document.getElementById(`bet-${type}`);
+      const amt = document.getElementById(`amt-${type}`);
+      if (!el || !amt) return;
+      const val = bets[type] || 0;
+      el.classList.toggle('has-bet', val > 0);
+      amt.textContent = '$' + val.toLocaleString();
+    }
+
+    function getTotalBet() {
+      return Object.values(bets).reduce((s,v)=>s+v,0);
+    }
+
+    function updateTotalDisplay() {
+      document.getElementById('totalBetDisplay').textContent = '$' + getTotalBet().toLocaleString();
+    }
+
+    function clearAllBets() {
+      if (rolling) return;
+      const refund = getTotalBet();
+      setBalance(getBalance() + refund);
+      bets = {};
+      // Reset all UI
+      document.querySelectorAll('.sb-bet, .total-bet-cell').forEach(el => {
+        el.classList.remove('has-bet');
+        const amt = el.querySelector('.bet-amt');
+        if (amt) amt.textContent = '$0';
+      });
+      updateTotalDisplay();
+    }
+
+    async function rollDice() {
+      if (getTotalBet() === 0) { showToast('先にベットしてください'); return; }
+      if (rolling) return;
+      rolling = true;
+      document.getElementById('rollBtn').disabled = true;
+      document.getElementById('resultArea').innerHTML = '';
+
+      // Roll animation
+      const d1el = document.getElementById('dice1');
+      const d2el = document.getElementById('dice2');
+      const d3el = document.getElementById('dice3');
+
+      d1el.classList.add('dice-rolling');
+      d2el.classList.add('dice-rolling');
+      d3el.classList.add('dice-rolling');
+
+      // Random roll during animation
+      const animInterval = setInterval(() => {
+        d1el.textContent = DICE_EMOJI[Math.floor(Math.random()*6)+1];
+        d2el.textContent = DICE_EMOJI[Math.floor(Math.random()*6)+1];
+        d3el.textContent = DICE_EMOJI[Math.floor(Math.random()*6)+1];
+      }, 100);
+
+      await delay(900);
+      clearInterval(animInterval);
+
+      const r1 = Math.floor(Math.random()*6)+1;
+      const r2 = Math.floor(Math.random()*6)+1;
+      const r3 = Math.floor(Math.random()*6)+1;
+      const total = r1 + r2 + r3;
+      const isTriple = r1 === r2 && r2 === r3;
+
+      d1el.classList.remove('dice-rolling');
+      d2el.classList.remove('dice-rolling');
+      d3el.classList.remove('dice-rolling');
+      d1el.textContent = DICE_EMOJI[r1];
+      d2el.textContent = DICE_EMOJI[r2];
+      d3el.textContent = DICE_EMOJI[r3];
+      document.getElementById('totalDisplay').textContent = total;
+
+      // Calculate payout
+      let payout = 0;
+      let winDescriptions = [];
+
+      // Big/Small
+      if (!isTriple) {
+        if (total >= 11 && total <= 17 && bets.big) {
+          payout += bets.big * 2;
+          winDescriptions.push(`大 +$${bets.big}`);
+        }
+        if (total >= 4 && total <= 10 && bets.small) {
+          payout += bets.small * 2;
+          winDescriptions.push(`小 +$${bets.small}`);
+        }
+      }
+
+      // Triple bets
+      for (let n = 1; n <= 6; n++) {
+        const key = `triple${n}`;
+        if (isTriple && r1 === n && bets[key]) {
+          payout += bets[key] * 181;
+          winDescriptions.push(`トリプル${n} +$${bets[key]*180}`);
+        }
+      }
+
+      // Total bets
+      const totalKey = `total${total}`;
+      if (bets[totalKey]) {
+        const odds = TOTAL_ODDS[total] || 0;
+        payout += bets[totalKey] * (odds + 1);
+        winDescriptions.push(`合計${total} +$${bets[totalKey]*odds}`);
+      }
+
+      setBalance(getBalance() + Math.floor(payout));
+      updateBalanceDisplays();
+      document.getElementById('balDisplay').textContent = '$' + getBalance().toLocaleString();
+
+      const totalBet = getTotalBet();
+      const won = payout > 0;
+      stats.total++;
+      if (won) stats.wins++;
+
+      let resultMsg = isTriple ? `🎰 TRIPLE ${r1}s! ` : '';
+      resultMsg += `合計 ${total}`;
+      if (won) resultMsg += ` — ${winDescriptions.join(' / ')}`;
+      else resultMsg += ` — LOSE -$${totalBet.toLocaleString()}`;
+
+      document.getElementById('resultArea').innerHTML = `
+        <div class="result-message ${won ? 'result-win' : 'result-lose'}">
+          ${resultMsg}
+        </div>`;
+
+      const wr = stats.total > 0 ? Math.round(stats.wins/stats.total*100)+'%' : '—';
+      document.getElementById('winRateDisplay').textContent = wr;
+      document.getElementById('gameCountDisplay').textContent = stats.total;
+
+      bets = {};
+      clearAllBets();
+
+      rolling = false;
+      document.getElementById('rollBtn').disabled = false;
+    }
+
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    buildTotalBets();
+    initChipSelector('chipSelector');
+  </script>
+</body>
+</html>

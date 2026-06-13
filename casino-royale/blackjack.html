@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ブラックジャック | Casino Royale</title>
+  <meta name="description" content="ブラックジャックを無料で練習。Hit・Stand・Double・Splitで戦略を磨こう。">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .bj-area {
+      margin: 1rem 0;
+    }
+
+    .bj-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+      text-align: center;
+    }
+
+    .bj-cards {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      min-height: 108px;
+      align-items: center;
+    }
+
+    .bj-score {
+      text-align: center;
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      color: var(--gold);
+      font-weight: 700;
+      margin-top: 0.5rem;
+    }
+
+    .bj-score.bust { color: #e74c3c; }
+    .bj-score.blackjack { color: #f39c12; }
+
+    .bet-display {
+      text-align: center;
+      font-family: 'Cinzel', serif;
+      font-size: 2rem;
+      color: var(--gold);
+      font-weight: 700;
+      padding: 0.8rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: var(--radius);
+      border: 1px solid rgba(212,175,55,0.2);
+      margin: 1rem 0;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 0.6rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+    }
+
+    .action-row .btn {
+      min-width: 100px;
+      padding: 0.7rem 1.2rem;
+      font-size: 0.85rem;
+    }
+
+    .btn-hit { background: linear-gradient(135deg, #27ae60, #2ecc71); color: #fff; }
+    .btn-stand { background: linear-gradient(135deg, #c0392b, #e74c3c); color: #fff; }
+    .btn-double { background: linear-gradient(135deg, #8e44ad, #9b59b6); color: #fff; }
+    .btn-split { background: linear-gradient(135deg, #2980b9, #3498db); color: #fff; }
+
+    .btn-hit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(39,174,96,0.4); }
+    .btn-stand:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(192,57,43,0.4); }
+    .btn-double:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(142,68,173,0.4); }
+
+    .split-hands {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .split-hand {
+      background: rgba(0,0,0,0.3);
+      border: 2px solid rgba(212,175,55,0.15);
+      border-radius: var(--radius);
+      padding: 0.8rem;
+    }
+
+    .split-hand.active-hand {
+      border-color: var(--gold);
+      box-shadow: 0 0 15px rgba(212,175,55,0.2);
+    }
+
+    .strategy-hint {
+      background: rgba(212,175,55,0.05);
+      border: 1px solid rgba(212,175,55,0.2);
+      border-radius: var(--radius);
+      padding: 0.8rem 1rem;
+      font-size: 0.85rem;
+      color: var(--gold-dark);
+      text-align: center;
+      margin: 0.5rem 0;
+    }
+
+    .strategy-hint::before { content: '💡 '; }
+  </style>
+</head>
+<body>
+  <div id="header-mount"></div>
+
+  <div class="page-hero">
+    <h1>ブラックジャック</h1>
+    <p>BLACKJACK — 21を目指して戦略で勝つ</p>
+  </div>
+
+  <div class="game-container">
+    <div class="stats-bar">
+      <div class="stat-item"><div class="stat-label">残高</div><div class="stat-value" id="balDisplay">$10,000</div></div>
+      <div class="stat-item"><div class="stat-label">ベット</div><div class="stat-value" id="betDisplay">$0</div></div>
+      <div class="stat-item"><div class="stat-label">勝率</div><div class="stat-value" id="winRateDisplay">—</div></div>
+      <div class="stat-item"><div class="stat-label">ゲーム数</div><div class="stat-value" id="gameCountDisplay">0</div></div>
+    </div>
+
+    <div class="game-table">
+      <!-- Dealer -->
+      <div class="bj-area">
+        <div class="bj-label">🎩 Dealer ディーラー</div>
+        <div class="bj-cards" id="dealerCards"></div>
+        <div class="bj-score" id="dealerScore"></div>
+      </div>
+
+      <div class="gold-divider"></div>
+
+      <!-- Result -->
+      <div id="resultArea"></div>
+
+      <!-- Strategy hint -->
+      <div id="strategyHint" class="strategy-hint" style="display:none;"></div>
+
+      <!-- Player -->
+      <div class="bj-area">
+        <div class="bj-label">👤 You あなた</div>
+        <div class="bj-cards" id="playerCards"></div>
+        <div class="bj-score" id="playerScore"></div>
+      </div>
+
+      <div class="gold-divider"></div>
+
+      <!-- Bet phase -->
+      <div id="betPhase">
+        <div class="section-title">チップを選択してベット</div>
+        <div style="display:flex;justify-content:center; margin-bottom:0.8rem;">
+          <div class="chip-selector" id="chipSelector">
+            <div class="chip chip-1" data-value="1">$1</div>
+            <div class="chip chip-5" data-value="5">$5</div>
+            <div class="chip chip-25" data-value="25">$25</div>
+            <div class="chip chip-100" data-value="100">$100</div>
+            <div class="chip chip-500" data-value="500">$500</div>
+            <div class="chip chip-1000" data-value="1000">$1K</div>
+          </div>
+        </div>
+        <div class="bet-display" id="betDisplay2">$0</div>
+        <div class="action-row">
+          <button class="btn btn-danger" onclick="clearBet()">クリア</button>
+          <button class="btn btn-gold" onclick="deal()" id="dealBtn" disabled>DEAL</button>
+          <button class="btn btn-outline" onclick="rebet()" id="rebetBtn" disabled>再ベット</button>
+        </div>
+
+        <!-- Chip click zone -->
+        <div style="text-align:center; margin-top:0.5rem;">
+          <button class="btn btn-outline" onclick="addBet()" style="width:100%;max-width:300px;" id="addBetBtn">
+            + チップを追加
+          </button>
+        </div>
+      </div>
+
+      <!-- Play phase -->
+      <div id="playPhase" style="display:none;">
+        <div class="action-row">
+          <button class="btn btn-hit" onclick="hit()" id="hitBtn">HIT もう1枚</button>
+          <button class="btn btn-stand" onclick="stand()" id="standBtn">STAND 止める</button>
+          <button class="btn btn-double" onclick="doubleDown()" id="doubleBtn">DOUBLE ダブル</button>
+          <button class="btn btn-split" onclick="splitHand()" id="splitBtn" disabled>SPLIT</button>
+        </div>
+      </div>
+
+      <!-- New game -->
+      <div id="newGamePhase" style="display:none; text-align:center; margin-top:1rem;">
+        <button class="btn btn-gold" onclick="newGame()">▶ 次のゲーム</button>
+      </div>
+    </div>
+
+    <div class="rules-panel">
+      <h3>📖 ブラックジャックのルール（完全版）</h3>
+      <ul>
+        <li><strong style="color:var(--gold)">【目的】</strong> ディーラーよりも21に近い数字の手札を作る。21を超えると「バースト」で即負け。</li>
+        <li><strong style="color:var(--gold)">【カードの点数】</strong> 2〜9=そのまま / 10・J・Q・K=10点 / A=1または11（手札が21を超えない範囲で有利な方を自動選択）</li>
+        <li><strong style="color:var(--gold)">【ブラックジャック（BJ）】</strong> 最初の2枚がAと10点のカード（10/J/Q/K）の組み合わせ。通常の勝利より配当が高く1.5倍（3:2）。ディーラーもBJなら引き分け（プッシュ）。</li>
+        <li><strong style="color:var(--gold)">【Hit（ヒット）】</strong> カードをもう1枚引く。何枚でも引けるが21を超えたらバーストで即負け。</li>
+        <li><strong style="color:var(--gold)">【Stand（スタンド）】</strong> カードを引くのをやめ、現在の手札でディーラーと勝負する。</li>
+        <li><strong style="color:var(--gold)">【Double Down（ダブルダウン）】</strong> ベット額を2倍にして、カードを1枚だけ引いてスタンド。手札が9・10・11のときが特に有効。</li>
+        <li><strong style="color:var(--gold)">【Split（スプリット）】</strong> 最初の2枚が同じ数字なら2つの手に分けてそれぞれ独立してプレイ。各手にベット額を追加。</li>
+        <li><strong style="color:var(--gold)">【ディーラーのルール】</strong> ディーラーは合計16以下なら必ずヒット、17以上なら必ずスタンド。ディーラーのバーストはプレイヤー全員の勝ち。</li>
+        <li><strong style="color:var(--gold)">【配当】</strong> 通常勝利: 1:1 / ブラックジャック: 3:2（1.5倍）/ 引き分け（プッシュ）: ベット返還</li>
+        <li><strong style="color:var(--gold)">【基本戦略（ベーシックストラテジー）】</strong><br>
+          ・手札11以下 → 基本ヒット（特に9〜11はダブル検討）<br>
+          ・手札12〜16、ディーラーが2〜6（弱い）→ スタンド推奨<br>
+          ・手札12〜16、ディーラーが7〜A（強い）→ ヒット推奨<br>
+          ・手札17以上 → 必ずスタンド<br>
+          ・Aペアは必ずスプリット。10ペアはスプリットしない。
+        </li>
+        <li><strong style="color:var(--gold)">【ハウスエッジ】</strong> 基本戦略を完璧に使えばハウスエッジは約0.5%。カジノゲームの中でもプレイヤーが最も有利なゲームのひとつ。</li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="js/casino.js"></script>
+  <script>
+    document.getElementById('header-mount').innerHTML = buildHeader('blackjack.html');
+
+    let deck = [];
+    let playerHand = [];
+    let dealerHand = [];
+    let bet = 0;
+    let lastBet = 0;
+    let stats = { wins: 0, losses: 0, pushes: 0, total: 0 };
+    let splitHands = [];
+    let currentSplitIndex = 0;
+    let isSplit = false;
+    let phase = 'bet'; // 'bet' | 'play' | 'done'
+
+    function initGame() {
+      deck = createDeck(6);
+      initChipSelector('chipSelector');
+      updateBalanceDisplays();
+    }
+
+    function bjHandValue(hand) {
+      let val = 0;
+      let aces = 0;
+      for (const c of hand) {
+        if (c.rank === 'A') { aces++; val += 11; }
+        else if (['J','Q','K','10'].includes(c.rank)) val += 10;
+        else val += parseInt(c.rank);
+      }
+      while (val > 21 && aces > 0) { val -= 10; aces--; }
+      return val;
+    }
+
+    function isBlackjack(hand) {
+      return hand.length === 2 && bjHandValue(hand) === 21;
+    }
+
+    function addBet() {
+      const balance = getBalance();
+      if (selectedChip > balance) { showToast('残高が足りません！'); return; }
+      bet += selectedChip;
+      setBalance(balance - selectedChip);
+      updateBetDisplay();
+    }
+
+    function clearBet() {
+      setBalance(getBalance() + bet);
+      bet = 0;
+      updateBetDisplay();
+    }
+
+    function rebet() {
+      if (lastBet === 0) return;
+      const balance = getBalance();
+      if (lastBet > balance) { showToast('残高が足りません！'); return; }
+      bet = lastBet;
+      setBalance(balance - bet);
+      updateBetDisplay();
+    }
+
+    function updateBetDisplay() {
+      document.getElementById('betDisplay2').textContent = '$' + bet.toLocaleString();
+      document.getElementById('dealBtn').disabled = bet === 0;
+      document.getElementById('betDisplay').textContent = '$' + bet.toLocaleString();
+    }
+
+    function renderHand(hand, containerId, hideSecond = false) {
+      const el = document.getElementById(containerId);
+      el.innerHTML = '';
+      hand.forEach((card, i) => {
+        if (hideSecond && i === 1) {
+          el.appendChild(renderFaceDown());
+        } else {
+          const c = renderCard(card, i * 150);
+          el.appendChild(c);
+        }
+      });
+    }
+
+    function updateScores(hideDealer = false) {
+      const pVal = bjHandValue(playerHand);
+      document.getElementById('playerScore').textContent = pVal + (pVal > 21 ? ' BUST' : isBlackjack(playerHand) ? ' 🂡 BLACKJACK!' : '');
+      document.getElementById('playerScore').className = 'bj-score' + (pVal > 21 ? ' bust' : isBlackjack(playerHand) ? ' blackjack' : '');
+
+      if (hideDealer) {
+        document.getElementById('dealerScore').textContent = cardValue(dealerHand[0]) + '+?';
+      } else {
+        const dVal = bjHandValue(dealerHand);
+        document.getElementById('dealerScore').textContent = dVal + (dVal > 21 ? ' BUST' : '');
+        document.getElementById('dealerScore').className = 'bj-score' + (dVal > 21 ? ' bust' : '');
+      }
+    }
+
+    function getStrategyHint(playerHand, dealerUpCard) {
+      const pVal = bjHandValue(playerHand);
+      const dVal = cardValue(dealerUpCard);
+
+      if (pVal >= 17) return 'STAND — 17以上は止めるのが基本';
+      if (pVal <= 8) return 'HIT — 8以下は必ずヒット';
+      if (pVal === 11) return 'DOUBLE — 11はダブルが最強！';
+      if (pVal === 10 && dVal < 10) return 'DOUBLE — ディーラーが弱ければダブル推奨';
+      if ((pVal === 12 || pVal === 13) && dVal >= 4 && dVal <= 6) return 'STAND — ディーラーが弱い(4-6)ならスタンド';
+      if (pVal >= 13 && dVal <= 6) return 'STAND — ディーラーがバーストするのを待とう';
+      if (pVal >= 12 && dVal >= 7) return 'HIT — ディーラーが強いので積極的にヒット';
+      return 'HIT — 手を強くしよう';
+    }
+
+    async function deal() {
+      if (bet === 0) { showToast('ベットしてください'); return; }
+      lastBet = bet;
+      if (deck.length < 20) deck = createDeck(6);
+
+      playerHand = [deck.pop(), deck.pop()];
+      dealerHand = [deck.pop(), deck.pop()];
+
+      document.getElementById('resultArea').innerHTML = '';
+      document.getElementById('betPhase').style.display = 'none';
+      document.getElementById('playPhase').style.display = 'block';
+      document.getElementById('newGamePhase').style.display = 'none';
+
+      renderHand(dealerHand, 'dealerCards', true);
+      renderHand(playerHand, 'playerCards');
+      updateScores(true);
+
+      // Check player blackjack
+      if (isBlackjack(playerHand)) {
+        await delay(800);
+        // Reveal dealer
+        renderHand(dealerHand, 'dealerCards');
+        updateScores();
+        if (isBlackjack(dealerHand)) {
+          endGame('push');
+        } else {
+          endGame('blackjack');
+        }
+        return;
+      }
+
+      // Strategy hint
+      const hint = getStrategyHint(playerHand, dealerHand[0]);
+      const hintEl = document.getElementById('strategyHint');
+      hintEl.textContent = hint;
+      hintEl.style.display = 'block';
+
+      // Split available?
+      const canSplit = playerHand[0].rank === playerHand[1].rank;
+      document.getElementById('splitBtn').disabled = !canSplit;
+      document.getElementById('doubleBtn').disabled = false;
+
+      phase = 'play';
+      isSplit = false;
+    }
+
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function hit() {
+      if (phase !== 'play') return;
+      document.getElementById('doubleBtn').disabled = true;
+      playerHand.push(deck.pop());
+      renderHand(playerHand, 'playerCards');
+      updateScores(true);
+
+      const pVal = bjHandValue(playerHand);
+
+      if (pVal > 21) {
+        await delay(500);
+        renderHand(dealerHand, 'dealerCards');
+        updateScores();
+        endGame('bust');
+      } else if (pVal === 21) {
+        await delay(300);
+        await stand();
+      } else {
+        const hint = getStrategyHint(playerHand, dealerHand[0]);
+        document.getElementById('strategyHint').textContent = hint;
+      }
+    }
+
+    async function stand() {
+      if (phase !== 'play') return;
+      phase = 'dealer';
+      document.getElementById('hitBtn').disabled = true;
+      document.getElementById('standBtn').disabled = true;
+      document.getElementById('doubleBtn').disabled = true;
+      document.getElementById('strategyHint').style.display = 'none';
+
+      // Reveal dealer
+      renderHand(dealerHand, 'dealerCards');
+      updateScores();
+
+      // Dealer draws
+      while (bjHandValue(dealerHand) < 17) {
+        await delay(600);
+        dealerHand.push(deck.pop());
+        renderHand(dealerHand, 'dealerCards');
+        updateScores();
+      }
+
+      await delay(400);
+
+      const pVal = bjHandValue(playerHand);
+      const dVal = bjHandValue(dealerHand);
+
+      if (dVal > 21) endGame('dealer_bust');
+      else if (pVal > dVal) endGame('win');
+      else if (pVal < dVal) endGame('lose');
+      else endGame('push');
+    }
+
+    async function doubleDown() {
+      const balance = getBalance();
+      if (bet > balance) { showToast('残高が足りません！'); return; }
+      setBalance(balance - bet);
+      bet *= 2;
+      document.getElementById('betDisplay').textContent = '$' + bet.toLocaleString();
+      document.getElementById('doubleBtn').disabled = true;
+      playerHand.push(deck.pop());
+      renderHand(playerHand, 'playerCards');
+      updateScores(true);
+      const pVal = bjHandValue(playerHand);
+      if (pVal > 21) {
+        await delay(500);
+        renderHand(dealerHand, 'dealerCards');
+        updateScores();
+        endGame('bust');
+      } else {
+        await stand();
+      }
+    }
+
+    function splitHand() {
+      showToast('スプリット機能は近日公開予定！');
+    }
+
+    function endGame(result) {
+      phase = 'done';
+      document.getElementById('playPhase').style.display = 'none';
+      document.getElementById('newGamePhase').style.display = 'block';
+      document.getElementById('strategyHint').style.display = 'none';
+
+      let payout = 0;
+      let msg = '';
+      let cls = '';
+      stats.total++;
+
+      switch(result) {
+        case 'blackjack':
+          payout = bet * 2.5;
+          msg = '🂡 BLACKJACK! +$' + Math.floor(bet * 1.5).toLocaleString();
+          cls = 'result-win';
+          stats.wins++;
+          break;
+        case 'win':
+          payout = bet * 2;
+          msg = '🎉 WIN! +$' + bet.toLocaleString();
+          cls = 'result-win';
+          stats.wins++;
+          break;
+        case 'dealer_bust':
+          payout = bet * 2;
+          msg = '💥 DEALER BUST! You WIN! +$' + bet.toLocaleString();
+          cls = 'result-win';
+          stats.wins++;
+          break;
+        case 'bust':
+          payout = 0;
+          msg = '💀 BUST! You lose -$' + bet.toLocaleString();
+          cls = 'result-lose';
+          stats.losses++;
+          break;
+        case 'lose':
+          payout = 0;
+          msg = '😞 LOSE -$' + bet.toLocaleString();
+          cls = 'result-lose';
+          stats.losses++;
+          break;
+        case 'push':
+          payout = bet;
+          msg = '🤝 PUSH — 引き分け';
+          cls = 'result-tie';
+          stats.pushes++;
+          break;
+      }
+
+      setBalance(getBalance() + Math.floor(payout));
+
+      document.getElementById('resultArea').innerHTML = `
+        <div class="result-message ${cls}">${msg}</div>`;
+
+      const wr = stats.total > 0 ? Math.round(stats.wins / stats.total * 100) + '%' : '—';
+      document.getElementById('winRateDisplay').textContent = wr;
+      document.getElementById('gameCountDisplay').textContent = stats.total;
+      document.getElementById('balDisplay').textContent = '$' + getBalance().toLocaleString();
+      updateBalanceDisplays();
+    }
+
+    function newGame() {
+      bet = 0;
+      playerHand = [];
+      dealerHand = [];
+      document.getElementById('playerCards').innerHTML = '';
+      document.getElementById('dealerCards').innerHTML = '';
+      document.getElementById('playerScore').textContent = '';
+      document.getElementById('dealerScore').textContent = '';
+      document.getElementById('resultArea').innerHTML = '';
+      document.getElementById('strategyHint').style.display = 'none';
+      document.getElementById('betPhase').style.display = 'block';
+      document.getElementById('playPhase').style.display = 'none';
+      document.getElementById('newGamePhase').style.display = 'none';
+      document.getElementById('hitBtn').disabled = false;
+      document.getElementById('standBtn').disabled = false;
+
+      updateBetDisplay();
+      document.getElementById('rebetBtn').disabled = lastBet === 0;
+      phase = 'bet';
+    }
+
+    initGame();
+  </script>
+</body>
+</html>

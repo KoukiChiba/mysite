@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ドラゴンタイガー | Casino Royale</title>
+  <meta name="description" content="ドラゴンタイガーを無料練習。マニラで人気の超シンプルカードゲーム。">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .dt-arena {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1rem;
+      align-items: center;
+      margin: 1.5rem 0;
+    }
+
+    .dt-side {
+      background: rgba(0,0,0,0.3);
+      border: 3px solid rgba(212,175,55,0.15);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .dt-side.winner {
+      border-color: var(--gold);
+      box-shadow: 0 0 30px rgba(212,175,55,0.3);
+    }
+
+    .dt-side.loser {
+      opacity: 0.5;
+    }
+
+    .dt-dragon { background: linear-gradient(135deg, rgba(15,52,96,0.6), rgba(26,82,118,0.4)); }
+    .dt-tiger { background: linear-gradient(135deg, rgba(120,40,31,0.6), rgba(192,57,43,0.4)); }
+
+    .dt-icon {
+      font-size: 3.5rem;
+      margin-bottom: 0.5rem;
+      filter: drop-shadow(0 0 10px currentColor);
+    }
+
+    .dt-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+    }
+
+    .dt-odds {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .dt-card-slot {
+      display: flex;
+      justify-content: center;
+      min-height: 108px;
+      align-items: center;
+    }
+
+    .dt-bet-amount {
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      color: var(--gold);
+      font-weight: 700;
+      margin-top: 0.8rem;
+    }
+
+    .vs-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .vs-big {
+      font-family: 'Cinzel', serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--gold);
+    }
+
+    .tie-zone {
+      background: rgba(39,174,96,0.1);
+      border: 2px solid rgba(39,174,96,0.3);
+      border-radius: var(--radius);
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin: 0.5rem 0;
+    }
+
+    .tie-zone:hover { background: rgba(39,174,96,0.15); border-color: rgba(39,174,96,0.6); }
+    .tie-zone.has-bet { border-color: #27ae60; box-shadow: 0 0 15px rgba(39,174,96,0.3); }
+
+    .suit-zone-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin: 0.8rem 0;
+    }
+
+    .suit-zone {
+      background: rgba(0,0,0,0.4);
+      border: 2px solid rgba(212,175,55,0.15);
+      border-radius: var(--radius);
+      padding: 0.6rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .suit-zone:hover { border-color: rgba(212,175,55,0.5); }
+    .suit-zone.has-bet { border-color: var(--gold); }
+
+    .suit-icon { font-size: 1.5rem; }
+    .suit-name { font-size: 0.7rem; color: var(--text-muted); }
+    .suit-odds { font-size: 0.7rem; color: var(--gold-dark); font-weight:700; }
+    .suit-bet-amt { font-size: 0.75rem; color: var(--gold); font-weight:700; }
+
+    .history-cards {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .history-mini {
+      width: 28px;
+      height: 36px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .history-mini.D { background: rgba(26,82,118,0.8); color: #fff; }
+    .history-mini.T { background: rgba(192,57,43,0.8); color: #fff; }
+    .history-mini.tie { background: rgba(39,174,96,0.8); color: #fff; }
+
+    .dt-click-overlay {
+      cursor: pointer;
+      position: relative;
+    }
+
+    .dt-click-overlay::after {
+      content: '賭ける';
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="header-mount"></div>
+
+  <div class="page-hero">
+    <h1>ドラゴンタイガー</h1>
+    <p>DRAGON TIGER — マニラで爆発的人気のシンプルゲーム</p>
+  </div>
+
+  <div class="game-container">
+    <div class="stats-bar">
+      <div class="stat-item"><div class="stat-label">残高</div><div class="stat-value" id="balDisplay">$10,000</div></div>
+      <div class="stat-item"><div class="stat-label">ベット総額</div><div class="stat-value" id="totalBetDisplay">$0</div></div>
+      <div class="stat-item"><div class="stat-label">Dragon勝</div><div class="stat-value" id="dragonWins">0</div></div>
+      <div class="stat-item"><div class="stat-label">Tiger勝</div><div class="stat-value" id="tigerWins">0</div></div>
+    </div>
+
+    <div class="game-table">
+      <!-- Arena -->
+      <div class="dt-arena">
+        <div class="dt-side dt-dragon dt-click-overlay" onclick="placeDtBet('dragon')">
+          <div class="dt-icon">🐉</div>
+          <div class="dt-title">DRAGON</div>
+          <div class="dt-odds">配当 1:1</div>
+          <div class="dt-card-slot" id="dragonCard"></div>
+          <div class="dt-bet-amount" id="dragonBetAmt">$0</div>
+        </div>
+
+        <div class="vs-center">
+          <div class="vs-big">VS</div>
+          <div style="font-size:2rem">⚔️</div>
+        </div>
+
+        <div class="dt-side dt-tiger dt-click-overlay" onclick="placeDtBet('tiger')">
+          <div class="dt-icon">🐅</div>
+          <div class="dt-title">TIGER</div>
+          <div class="dt-odds">配当 1:1</div>
+          <div class="dt-card-slot" id="tigerCard"></div>
+          <div class="dt-bet-amount" id="tigerBetAmt">$0</div>
+        </div>
+      </div>
+
+      <!-- Tie bet -->
+      <div class="tie-zone" id="tie-zone" onclick="placeDtBet('tie')">
+        <span style="font-size:1.3rem;">🟢 TIE 引き分け</span>
+        <span style="color:var(--gold-dark); font-size:0.85rem; margin-left:1rem;">配当 8:1</span>
+        <div style="font-family:'Cinzel',serif; color:var(--gold); font-size:1rem; margin-top:0.3rem;" id="tieBetAmt">$0</div>
+      </div>
+
+      <div id="resultArea"></div>
+
+      <div class="gold-divider"></div>
+
+      <!-- Suit bets -->
+      <div class="section-title">スートベット（そのカードがこのスートなら勝ち）</div>
+      <div class="suit-zone-row">
+        <div class="suit-zone" id="bet-spade-d" onclick="placeSuitBet('spade','dragon')">
+          <div class="suit-icon">♠</div>
+          <div class="suit-name">Dragon ♠</div>
+          <div class="suit-odds">3:1</div>
+          <div class="suit-bet-amt" id="amt-spade-d">$0</div>
+        </div>
+        <div class="suit-zone" id="bet-heart-d" onclick="placeSuitBet('heart','dragon')" style="color:#e74c3c;">
+          <div class="suit-icon">♥</div>
+          <div class="suit-name">Dragon ♥</div>
+          <div class="suit-odds">3:1</div>
+          <div class="suit-bet-amt" id="amt-heart-d">$0</div>
+        </div>
+        <div class="suit-zone" id="bet-diamond-d" onclick="placeSuitBet('diamond','dragon')" style="color:#e74c3c;">
+          <div class="suit-icon">♦</div>
+          <div class="suit-name">Dragon ♦</div>
+          <div class="suit-odds">3:1</div>
+          <div class="suit-bet-amt" id="amt-diamond-d">$0</div>
+        </div>
+        <div class="suit-zone" id="bet-club-d" onclick="placeSuitBet('club','dragon')">
+          <div class="suit-icon">♣</div>
+          <div class="suit-name">Dragon ♣</div>
+          <div class="suit-odds">3:1</div>
+          <div class="suit-bet-amt" id="amt-club-d">$0</div>
+        </div>
+      </div>
+      <div class="suit-zone-row">
+        <div class="suit-zone" id="bet-spade-t" onclick="placeSuitBet('spade','tiger')">
+          <div class="suit-icon">♠</div>
+          <div class="suit-name">Tiger ♠</div>
+          <div class="suit-odds">3:1</div>
+          <div class="suit-bet-amt" id="amt-spade-t">$0</div>
+        </div>
+        <div class="suit-zone" id="bet-heart-t" onclick="placeSuitBet('heart','tiger')" style="color:#e74c3c;">
+          <div class="suit-icon">♥</div>
+          <div class="suit-name">Tiger ♥</div>
+          <div class="suit-odds">3:1</div>
+          <div class="suit-bet-amt" id="amt-heart-t">$0</div>
+        </div>
+        <div class="suit-zone" id="bet-diamond-t" onclick="placeSuitBet('diamond','tiger')" style="color:#e74c3c;">
+          <div class="suit-icon">♦</div>
+          <div class="suit-name">Tiger ♦</div>
+          <div class="suit-odds">3:1</div>
+          <div class="suit-bet-amt" id="amt-diamond-t">$0</div>
+        </div>
+        <div class="suit-zone" id="bet-club-t" onclick="placeSuitBet('club','tiger')">
+          <div class="suit-icon">♣</div>
+          <div class="suit-name">Tiger ♣</div>
+          <div class="suit-odds">3:1</div>
+          <div class="suit-bet-amt" id="amt-club-t">$0</div>
+        </div>
+      </div>
+
+      <div class="gold-divider"></div>
+
+      <!-- Chips -->
+      <div class="section-title">チップを選択</div>
+      <div style="display:flex;justify-content:center; margin-bottom:1rem;">
+        <div class="chip-selector" id="chipSelector">
+          <div class="chip chip-1" data-value="1">$1</div>
+          <div class="chip chip-5" data-value="5">$5</div>
+          <div class="chip chip-25" data-value="25">$25</div>
+          <div class="chip chip-100" data-value="100">$100</div>
+          <div class="chip chip-500" data-value="500">$500</div>
+          <div class="chip chip-1000" data-value="1000">$1K</div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-danger" onclick="clearAllBets()">クリア</button>
+        <button class="btn btn-gold" onclick="dealCards()" id="dealBtn">🃏 DEAL カードを配る</button>
+        <button class="btn btn-outline" onclick="rebet()" id="rebetBtn" disabled>再ベット</button>
+      </div>
+
+      <!-- History -->
+      <div id="historyArea" style="display:none; margin-top:1rem;">
+        <div class="section-title">結果履歴</div>
+        <div class="history-cards" id="historyCards"></div>
+      </div>
+    </div>
+
+    <div class="rules-panel">
+      <h3>📖 ドラゴンタイガーのルール（完全版）</h3>
+      <ul>
+        <li><strong style="color:var(--gold)">【目的】</strong> ドラゴンとタイガーにそれぞれ1枚ずつカードを配り、強いカードが出た方に賭けたプレイヤーが勝つ。バカラを極限までシンプルにしたゲーム。</li>
+        <li><strong style="color:var(--gold)">【カードの強さ】</strong> A（最弱）&lt; 2 &lt; 3 &lt; 4 &lt; 5 &lt; 6 &lt; 7 &lt; 8 &lt; 9 &lt; 10 &lt; J &lt; Q &lt; K（最強）。バカラと異なりAは最弱扱い。</li>
+        <li><strong style="color:var(--gold)">【Dragon（ドラゴン）ベット】</strong> ドラゴン側のカードがタイガーより強い → 配当1:1。シンプルで約46.3%の勝率。</li>
+        <li><strong style="color:var(--gold)">【Tiger（タイガー）ベット】</strong> タイガー側のカードがドラゴンより強い → 配当1:1。ドラゴンと同様の確率・配当。</li>
+        <li><strong style="color:var(--gold)">【Tie（タイ）ベット】</strong> 両側のカードが同じ数字（例：ドラゴン7 vs タイガー7）→ 配当8:1の高配当。確率は約7.7%（52枚中4枚×13種類）。タイが出た場合、Dragon/Tigerへのベットは半額返還。</li>
+        <li><strong style="color:var(--gold)">【スートベット】</strong> そのサイドに出るカードのスート（♠♥♦♣）を予想 → 配当3:1。4分の1の確率なので期待値は良い方ではないが、的中時の配当が魅力的。</li>
+        <li><strong style="color:var(--gold)">【ゲームスピード】</strong> 1ゲームが非常に短く、バカラの倍以上のスピードで進行する。マニラのカジノでは最も卓が多いゲームのひとつ。</li>
+        <li><strong style="color:var(--gold)">【ハウスエッジ】</strong> Dragon/Tiger: 約3.73% / Tie: 約32.77%（非常に高い！） / スートベット: 約7.69%。タイへの多額ベットは避けよう。</li>
+        <li><strong style="color:var(--gold)">【おすすめの戦略】</strong> Dragon/Tigerのどちらかに集中してベットするのが基本。一方が連勝中でも次のゲームには影響しない（独立試行）。Tieは記念程度に少額だけ。</li>
+        <li><strong style="color:var(--gold)">【マニラでの特徴】</strong> フィリピン・マニラのカジノ（ソレア、オカダ、シティオブドリームス等）ではドラゴンタイガーが非常に盛んで、アジア人観光客に特に人気。</li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="js/casino.js"></script>
+  <script>
+    document.getElementById('header-mount').innerHTML = buildHeader('dragontiger.html');
+
+    let bets = { dragon: 0, tiger: 0, tie: 0 };
+    let suitBets = {};
+    let lastBets = { dragon: 0, tiger: 0, tie: 0 };
+    let lastSuitBets = {};
+    let dtDeck = [];
+    let winsD = 0, winsT = 0;
+    let dealing = false;
+
+    // DT card value: A=1, 2-9=face, 10,J,Q,K=10,11,12,13
+    function dtValue(card) {
+      if (card.rank === 'A') return 1;
+      if (card.rank === 'J') return 11;
+      if (card.rank === 'Q') return 12;
+      if (card.rank === 'K') return 13;
+      return parseInt(card.rank);
+    }
+
+    function suitCode(card) {
+      if (card.suit === '♠') return 'spade';
+      if (card.suit === '♥') return 'heart';
+      if (card.suit === '♦') return 'diamond';
+      return 'club';
+    }
+
+    function placeDtBet(side) {
+      if (dealing) return;
+      const balance = getBalance();
+      if (selectedChip > balance) { showToast('残高が足りません！'); return; }
+      bets[side] += selectedChip;
+      setBalance(balance - selectedChip);
+      updateBetUI();
+    }
+
+    function placeSuitBet(suit, side) {
+      if (dealing) return;
+      const balance = getBalance();
+      if (selectedChip > balance) { showToast('残高が足りません！'); return; }
+      const key = `${suit}-${side[0]}`;
+      suitBets[key] = (suitBets[key] || 0) + selectedChip;
+      setBalance(balance - selectedChip);
+
+      const el = document.getElementById(`bet-${key}`);
+      const amt = document.getElementById(`amt-${key}`);
+      if (el) el.classList.add('has-bet');
+      if (amt) amt.textContent = '$' + suitBets[key].toLocaleString();
+      updateTotalBet();
+    }
+
+    function updateBetUI() {
+      document.getElementById('dragonBetAmt').textContent = '$' + bets.dragon.toLocaleString();
+      document.getElementById('tigerBetAmt').textContent = '$' + bets.tiger.toLocaleString();
+      document.getElementById('tieBetAmt').textContent = '$' + bets.tie.toLocaleString();
+
+      const sides = ['dragon', 'tiger'];
+      sides.forEach(s => {
+        const el = document.getElementById(s === 'dragon' ? 'dt-arena' : null);
+      });
+
+      document.getElementById('tie-zone').classList.toggle('has-bet', bets.tie > 0);
+      updateTotalBet();
+    }
+
+    function getTotalBet() {
+      return bets.dragon + bets.tiger + bets.tie +
+             Object.values(suitBets).reduce((s,v)=>s+v,0);
+    }
+
+    function updateTotalBet() {
+      document.getElementById('totalBetDisplay').textContent = '$' + getTotalBet().toLocaleString();
+      document.getElementById('dealBtn').disabled = getTotalBet() === 0;
+    }
+
+    function clearAllBets() {
+      if (dealing) return;
+      setBalance(getBalance() + getTotalBet());
+      bets = { dragon: 0, tiger: 0, tie: 0 };
+      suitBets = {};
+      updateBetUI();
+      // Reset suit bets UI
+      document.querySelectorAll('.suit-zone').forEach(el => el.classList.remove('has-bet'));
+      document.querySelectorAll('.suit-bet-amt').forEach(el => el.textContent = '$0');
+    }
+
+    function rebet() {
+      if (dealing) return;
+      const totalLast = lastBets.dragon + lastBets.tiger + lastBets.tie + Object.values(lastSuitBets).reduce((s,v)=>s+v,0);
+      if (totalLast > getBalance()) { showToast('残高が足りません！'); return; }
+      bets = { ...lastBets };
+      suitBets = { ...lastSuitBets };
+      setBalance(getBalance() - totalLast);
+      updateBetUI();
+      // Restore suit bet UI
+      Object.entries(suitBets).forEach(([key, val]) => {
+        const el = document.getElementById(`bet-${key}`);
+        const amt = document.getElementById(`amt-${key}`);
+        if (el) el.classList.add('has-bet');
+        if (amt) amt.textContent = '$' + val.toLocaleString();
+      });
+    }
+
+    async function dealCards() {
+      if (getTotalBet() === 0) { showToast('先にベットしてください'); return; }
+      if (dealing) return;
+      dealing = true;
+      lastBets = { ...bets };
+      lastSuitBets = { ...suitBets };
+
+      document.getElementById('dealBtn').disabled = true;
+      document.getElementById('resultArea').innerHTML = '';
+      document.getElementById('dragonCard').innerHTML = '';
+      document.getElementById('tigerCard').innerHTML = '';
+
+      const dragonSide = document.querySelector('.dt-dragon');
+      const tigerSide = document.querySelector('.dt-tiger');
+      dragonSide.classList.remove('winner', 'loser');
+      tigerSide.classList.remove('winner', 'loser');
+
+      if (dtDeck.length < 10) dtDeck = createDeck(8);
+
+      await delay(300);
+      const dCard = dtDeck.pop();
+      const tCard = dtDeck.pop();
+
+      // Animate
+      const dEl = renderCard(dCard, 0);
+      document.getElementById('dragonCard').appendChild(dEl);
+
+      await delay(500);
+
+      const tEl = renderCard(tCard, 0);
+      document.getElementById('tigerCard').appendChild(tEl);
+
+      await delay(600);
+
+      const dVal = dtValue(dCard);
+      const tVal = dtValue(tCard);
+
+      let winner, payout = 0, winItems = [];
+
+      if (dVal > tVal) {
+        winner = 'dragon';
+        dragonSide.classList.add('winner');
+        tigerSide.classList.add('loser');
+        if (bets.dragon) { payout += bets.dragon * 2; winItems.push(`Dragon +$${bets.dragon}`); }
+        winsD++;
+      } else if (tVal > dVal) {
+        winner = 'tiger';
+        tigerSide.classList.add('winner');
+        dragonSide.classList.add('loser');
+        if (bets.tiger) { payout += bets.tiger * 2; winItems.push(`Tiger +$${bets.tiger}`); }
+        winsT++;
+      } else {
+        winner = 'tie';
+        dragonSide.classList.add('winner');
+        tigerSide.classList.add('winner');
+        if (bets.tie) { payout += bets.tie * 9; winItems.push(`Tie +$${bets.tie * 8}`); }
+        // Return half of dragon/tiger bets on tie
+        payout += Math.floor(bets.dragon / 2) + Math.floor(bets.tiger / 2);
+      }
+
+      // Suit bets
+      const dSuit = suitCode(dCard);
+      const tSuit = suitCode(tCard);
+      Object.entries(suitBets).forEach(([key, val]) => {
+        const [suit, side] = key.split('-');
+        if (side === 'd' && suit === dSuit) { payout += val * 4; winItems.push(`Dragon ${dCard.suit} +$${val*3}`); }
+        if (side === 't' && suit === tSuit) { payout += val * 4; winItems.push(`Tiger ${tCard.suit} +$${val*3}`); }
+      });
+
+      setBalance(getBalance() + Math.floor(payout));
+      updateBalanceDisplays();
+      document.getElementById('balDisplay').textContent = '$' + getBalance().toLocaleString();
+
+      const won = payout > 0;
+      const totalBet = getTotalBet();
+      const emoji = winner === 'dragon' ? '🐉' : winner === 'tiger' ? '🐅' : '🟢';
+
+      let msg = `${emoji} ${winner.toUpperCase()} WINS!`;
+      if (winItems.length) msg += ` — ${winItems.join(' / ')}`;
+      else msg += ` — LOSE -$${totalBet.toLocaleString()}`;
+
+      document.getElementById('resultArea').innerHTML = `
+        <div class="result-message ${won ? 'result-win' : (winner === 'tie' ? 'result-tie' : 'result-lose')}">
+          ${msg}
+        </div>`;
+
+      document.getElementById('dragonWins').textContent = winsD;
+      document.getElementById('tigerWins').textContent = winsT;
+
+      addHistory(winner === 'dragon' ? 'D' : winner === 'tiger' ? 'T' : 'tie', dCard, tCard);
+
+      bets = { dragon: 0, tiger: 0, tie: 0 };
+      suitBets = {};
+      dealing = false;
+      document.getElementById('rebetBtn').disabled = false;
+      updateBetUI();
+    }
+
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    function addHistory(result, dCard, tCard) {
+      document.getElementById('historyArea').style.display = 'block';
+      const track = document.getElementById('historyCards');
+      const div = document.createElement('div');
+      div.className = `history-mini ${result}`;
+      div.title = `Dragon: ${dCard.rank}${dCard.suit} vs Tiger: ${tCard.rank}${tCard.suit}`;
+      div.textContent = result === 'tie' ? 'T' : result;
+      track.prepend(div);
+      if (track.children.length > 30) track.lastChild.remove();
+    }
+
+    initChipSelector('chipSelector');
+    updateTotalBet();
+  </script>
+</body>
+</html>

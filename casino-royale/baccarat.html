@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>バカラ | Casino Royale</title>
+  <meta name="description" content="バカラをオンラインで無料練習。マカオ式ルールでプレイヤー・バンカー・タイに賭けよう。">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .baccarat-areas {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1rem;
+      align-items: start;
+      margin: 1.5rem 0;
+    }
+
+    .bac-side {
+      background: rgba(0,0,0,0.3);
+      border: 2px solid rgba(212,175,55,0.2);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+      text-align: center;
+      transition: border-color 0.3s;
+    }
+
+    .bac-side.winner {
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(212,175,55,0.3);
+    }
+
+    .bac-side-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+    }
+
+    .bac-cards {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      min-height: 108px;
+      align-items: center;
+    }
+
+    .bac-score {
+      font-family: 'Cinzel', serif;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--gold);
+      margin-top: 0.8rem;
+    }
+
+    .vs-divider {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding-top: 3rem;
+    }
+
+    .vs-text {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      color: var(--gold-dark);
+      font-weight: 700;
+    }
+
+    .tie-bet-area {
+      text-align: center;
+      margin: 0.5rem 0;
+    }
+
+    .bac-bet-zones {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.8rem;
+      margin: 1rem 0;
+    }
+
+    .bac-bet-zone {
+      background: rgba(0,0,0,0.4);
+      border: 2px solid rgba(212,175,55,0.15);
+      border-radius: var(--radius);
+      padding: 1rem 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      position: relative;
+    }
+
+    .bac-bet-zone:hover {
+      border-color: rgba(212,175,55,0.5);
+      background: rgba(212,175,55,0.05);
+    }
+
+    .bac-bet-zone.active {
+      border-color: var(--gold);
+      background: rgba(212,175,55,0.1);
+      box-shadow: 0 0 15px rgba(212,175,55,0.2);
+    }
+
+    .bac-bet-zone .zone-name {
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+    }
+
+    .bac-bet-zone .zone-odds {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .bac-bet-zone .zone-amount {
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      color: var(--gold);
+      font-weight: 700;
+      margin-top: 0.3rem;
+    }
+
+    .bac-bet-zone .zone-chip {
+      font-size: 1.5rem;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 0.8rem;
+      justify-content: center;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .history-track {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .history-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .history-dot.P { background: #2980b9; }
+    .history-dot.B { background: #c0392b; }
+    .history-dot.T { background: #27ae60; }
+  </style>
+</head>
+<body>
+  <div id="header-mount"></div>
+
+  <div class="page-hero">
+    <h1>バカラ</h1>
+    <p>BACCARAT — マカオを制するゲーム</p>
+  </div>
+
+  <div class="game-container">
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat-item"><div class="stat-label">残高</div><div class="stat-value" id="balDisplay">$10,000</div></div>
+      <div class="stat-item"><div class="stat-label">ベット総額</div><div class="stat-value" id="totalBetDisplay">$0</div></div>
+      <div class="stat-item"><div class="stat-label">勝率</div><div class="stat-value" id="winRateDisplay">—</div></div>
+      <div class="stat-item"><div class="stat-label">ゲーム数</div><div class="stat-value" id="gameCountDisplay">0</div></div>
+    </div>
+
+    <div class="game-table">
+      <!-- Cards Area -->
+      <div class="baccarat-areas">
+        <div class="bac-side" id="playerSide">
+          <div class="bac-side-title">🔵 Player プレイヤー</div>
+          <div class="bac-cards" id="playerCards"></div>
+          <div class="bac-score" id="playerScore">—</div>
+        </div>
+        <div class="vs-divider">
+          <div class="vs-text">VS</div>
+          <div style="font-size:1.5rem">⚔️</div>
+        </div>
+        <div class="bac-side" id="bankerSide">
+          <div class="bac-side-title">🔴 Banker バンカー</div>
+          <div class="bac-cards" id="bankerCards"></div>
+          <div class="bac-score" id="bankerScore">—</div>
+        </div>
+      </div>
+
+      <div id="resultArea"></div>
+
+      <div class="gold-divider"></div>
+
+      <!-- Bet Zones -->
+      <div class="section-title">賭けるエリアを選択してチップをクリック</div>
+      <div class="bac-bet-zones">
+        <div class="bac-bet-zone" id="betPlayer" onclick="placeBet('player')">
+          <div class="zone-chip">🔵</div>
+          <div class="zone-name">PLAYER</div>
+          <div class="zone-odds">配当 1:1</div>
+          <div class="zone-amount" id="betPlayerAmt">$0</div>
+        </div>
+        <div class="bac-bet-zone" id="betTie" onclick="placeBet('tie')">
+          <div class="zone-chip">🟢</div>
+          <div class="zone-name">TIE</div>
+          <div class="zone-odds">配当 8:1</div>
+          <div class="zone-amount" id="betTieAmt">$0</div>
+        </div>
+        <div class="bac-bet-zone" id="betBanker" onclick="placeBet('banker')">
+          <div class="zone-chip">🔴</div>
+          <div class="zone-name">BANKER</div>
+          <div class="zone-odds">配当 0.95:1</div>
+          <div class="zone-amount" id="betBankerAmt">$0</div>
+        </div>
+      </div>
+
+      <!-- Chip Selector -->
+      <div style="margin: 1rem 0;">
+        <div class="section-title">チップを選択</div>
+        <div style="display:flex;justify-content:center;">
+          <div class="chip-selector" id="chipSelector">
+            <div class="chip chip-1" data-value="1">$1</div>
+            <div class="chip chip-5" data-value="5">$5</div>
+            <div class="chip chip-25" data-value="25">$25</div>
+            <div class="chip chip-100" data-value="100">$100</div>
+            <div class="chip chip-500" data-value="500">$500</div>
+            <div class="chip chip-1000" data-value="1000">$1K</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="action-row">
+        <button class="btn btn-danger" onclick="clearBets()" id="clearBtn">クリア</button>
+        <button class="btn btn-gold" onclick="deal()" id="dealBtn">DEAL カードを配る</button>
+        <button class="btn btn-outline" onclick="rebet()" id="rebetBtn" disabled>再ベット</button>
+      </div>
+
+      <!-- History -->
+      <div id="historyArea" style="display:none; margin-top:1rem;">
+        <div class="section-title">結果履歴</div>
+        <div class="history-track" id="historyTrack"></div>
+      </div>
+    </div>
+
+    <!-- Rules -->
+    <div class="rules-panel">
+      <h3>📖 バカラのルール（完全版）</h3>
+      <ul>
+        <li><strong style="color:var(--gold)">【目的】</strong> プレイヤーとバンカーどちらが9に近いかを予想してベットする。自分でカードを操作することはできない。</li>
+        <li><strong style="color:var(--gold)">【カードの点数】</strong> A=1点 / 2〜9=そのまま / 10・J・Q・K=0点。合計が10以上の場合は10を引いた1の位が得点（例：7+8=15 → 5点）</li>
+        <li><strong style="color:var(--gold)">【ナチュラル（Natural）】</strong> 最初の2枚の合計が8または9の場合「ナチュラル」と呼ばれ、そのラウンドは即終了。追加カードは引かれない。9はナチュラル9（最強）、8はナチュラル8。</li>
+        <li><strong style="color:var(--gold)">【プレイヤーの第3カード】</strong> プレイヤーの合計が0〜5 → 必ず1枚引く / 6・7 → スタンド（引かない）/ 8・9 → ナチュラルで終了</li>
+        <li><strong style="color:var(--gold)">【バンカーの第3カード（詳細ルール）】</strong><br>
+          バンカー合計0〜2 → 必ず引く<br>
+          バンカー合計3 → プレイヤー3枚目が8以外なら引く<br>
+          バンカー合計4 → プレイヤー3枚目が2〜7なら引く<br>
+          バンカー合計5 → プレイヤー3枚目が4〜7なら引く<br>
+          バンカー合計6 → プレイヤー3枚目が6・7なら引く<br>
+          バンカー合計7 → スタンド（引かない）<br>
+          ※プレイヤーが3枚目を引かなかった場合、バンカーは合計0〜5なら引く
+        </li>
+        <li><strong style="color:var(--gold)">【配当】</strong> プレイヤー勝ち: 1:1 / バンカー勝ち: 0.95:1（5%コミッション）/ タイ: 8:1</li>
+        <li><strong style="color:var(--gold)">【タイ（引き分け）について】</strong> タイの場合、プレイヤー・バンカーへの賭けは引き分け扱いで返金される。タイに直接ベットしていた場合は8:1の配当。</li>
+        <li><strong style="color:var(--gold)">【マカオでの慣習】</strong> マカオの本場ではバンカーが圧倒的に多く選ばれる。長期的にはバンカーの方が僅かに有利（ハウスエッジ: プレイヤー1.24%、バンカー1.06%、タイ14.36%）</li>
+        <li><strong style="color:var(--gold)">【おすすめの戦略】</strong> 初心者はバンカーに賭け続けるのが最もシンプルで勝率が高い。タイは高配当だが期待値が低いため控えめに。</li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="js/casino.js"></script>
+  <script>
+    document.getElementById('header-mount').innerHTML = buildHeader('baccarat.html');
+
+    let deck = [];
+    let bets = { player: 0, tie: 0, banker: 0 };
+    let lastBets = { player: 0, tie: 0, banker: 0 };
+    let stats = { wins: 0, total: 0 };
+    let gameInProgress = false;
+
+    function initGame() {
+      deck = createDeck(8);
+      initChipSelector('chipSelector');
+      updateUI();
+    }
+
+    function totalBet() {
+      return bets.player + bets.tie + bets.banker;
+    }
+
+    function placeBet(side) {
+      if (gameInProgress) return;
+      const balance = getBalance();
+      const amt = selectedChip;
+      if (amt > balance) { showToast('残高が足りません！'); return; }
+      bets[side] += amt;
+      setBalance(balance - amt);
+      updateUI();
+    }
+
+    function clearBets() {
+      if (gameInProgress) return;
+      setBalance(getBalance() + totalBet());
+      bets = { player: 0, tie: 0, banker: 0 };
+      updateUI();
+    }
+
+    function rebet() {
+      if (gameInProgress) return;
+      const balance = getBalance();
+      const total = lastBets.player + lastBets.tie + lastBets.banker;
+      if (total > balance) { showToast('残高が足りません！'); return; }
+      bets = { ...lastBets };
+      setBalance(balance - total);
+      updateUI();
+    }
+
+    function updateUI() {
+      document.getElementById('balDisplay').textContent = '$' + getBalance().toLocaleString();
+      document.getElementById('totalBetDisplay').textContent = '$' + totalBet().toLocaleString();
+      document.getElementById('betPlayerAmt').textContent = '$' + bets.player.toLocaleString();
+      document.getElementById('betTieAmt').textContent = '$' + bets.tie.toLocaleString();
+      document.getElementById('betBankerAmt').textContent = '$' + bets.banker.toLocaleString();
+
+      ['player','tie','banker'].forEach(s => {
+        document.getElementById('bet' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('active', bets[s] > 0);
+      });
+
+      const wr = stats.total > 0 ? Math.round(stats.wins / stats.total * 100) + '%' : '—';
+      document.getElementById('winRateDisplay').textContent = wr;
+      document.getElementById('gameCountDisplay').textContent = stats.total;
+
+      document.getElementById('dealBtn').disabled = totalBet() === 0;
+      document.getElementById('clearBtn').disabled = totalBet() === 0;
+    }
+
+    function baccaratValue(cards) {
+      const sum = cards.reduce((s, c) => s + cardValue(c, true), 0);
+      return sum % 10;
+    }
+
+    async function deal() {
+      if (totalBet() === 0) { showToast('ベットしてください'); return; }
+      if (gameInProgress) return;
+      gameInProgress = true;
+      lastBets = { ...bets };
+
+      // Reset UI
+      document.getElementById('playerCards').innerHTML = '';
+      document.getElementById('bankerCards').innerHTML = '';
+      document.getElementById('playerScore').textContent = '—';
+      document.getElementById('bankerScore').textContent = '—';
+      document.getElementById('resultArea').innerHTML = '';
+      document.getElementById('playerSide').classList.remove('winner');
+      document.getElementById('bankerSide').classList.remove('winner');
+      document.getElementById('dealBtn').disabled = true;
+      document.getElementById('clearBtn').disabled = true;
+
+      if (deck.length < 20) deck = createDeck(8);
+
+      const playerHand = [];
+      const bankerHand = [];
+
+      // Deal 2 each
+      playerHand.push(deck.pop());
+      bankerHand.push(deck.pop());
+      playerHand.push(deck.pop());
+      bankerHand.push(deck.pop());
+
+      // Animate dealing
+      const pCards = document.getElementById('playerCards');
+      const bCards = document.getElementById('bankerCards');
+
+      await animateDeal(pCards, playerHand[0], 0);
+      await animateDeal(bCards, bankerHand[0], 150);
+      await animateDeal(pCards, playerHand[1], 300);
+      await animateDeal(bCards, bankerHand[1], 450);
+
+      await delay(300);
+
+      let pScore = baccaratValue(playerHand);
+      let bScore = baccaratValue(bankerHand);
+
+      updateScores(pScore, bScore);
+
+      // Third card logic
+      const natural = pScore >= 8 || bScore >= 8;
+      let playerDrewThird = false;
+      let playerThirdCard = null;
+
+      if (!natural) {
+        // Player rule: draw if 0-5
+        if (pScore <= 5) {
+          playerThirdCard = deck.pop();
+          playerHand.push(playerThirdCard);
+          await animateDeal(pCards, playerThirdCard, 0);
+          await delay(200);
+          pScore = baccaratValue(playerHand);
+          updateScores(pScore, bScore);
+          playerDrewThird = true;
+        }
+
+        // Banker rule
+        let bankerDraws = false;
+        if (!playerDrewThird) {
+          bankerDraws = bScore <= 5;
+        } else {
+          const pt = cardValue(playerThirdCard, true);
+          if (bScore <= 2) bankerDraws = true;
+          else if (bScore === 3) bankerDraws = pt !== 8;
+          else if (bScore === 4) bankerDraws = pt >= 2 && pt <= 7;
+          else if (bScore === 5) bankerDraws = pt >= 4 && pt <= 7;
+          else if (bScore === 6) bankerDraws = pt === 6 || pt === 7;
+        }
+
+        if (bankerDraws) {
+          const bThird = deck.pop();
+          bankerHand.push(bThird);
+          await animateDeal(bCards, bThird, 0);
+          await delay(200);
+          bScore = baccaratValue(bankerHand);
+          updateScores(pScore, bScore);
+        }
+      }
+
+      await delay(400);
+
+      // Determine result
+      let winner, payout = 0;
+      if (pScore > bScore) {
+        winner = 'player';
+        payout += bets.player * 2;
+        if (bets.tie > 0) payout += 0; // lose
+        if (bets.banker > 0) payout += 0;
+        document.getElementById('playerSide').classList.add('winner');
+      } else if (bScore > pScore) {
+        winner = 'banker';
+        payout += bets.banker * 1.95; // 5% commission
+        if (bets.player > 0) payout += 0;
+        document.getElementById('bankerSide').classList.add('winner');
+      } else {
+        winner = 'tie';
+        payout += bets.tie * 9; // 8:1 + stake back
+        payout += bets.player; // push (stake returned)
+        payout += bets.banker; // push (stake returned)
+        document.getElementById('playerSide').classList.add('winner');
+        document.getElementById('bankerSide').classList.add('winner');
+      }
+
+      payout = Math.floor(payout);
+      setBalance(getBalance() + payout);
+
+      // Show result
+      const resultClass = winner === 'tie' ? 'result-tie' : (
+        (winner === 'player' && bets.player > 0) || (winner === 'banker' && bets.banker > 0) || winner === 'tie' ? 'result-win' : 'result-lose'
+      );
+
+      let won = false;
+      if (winner === 'player' && bets.player > 0) won = true;
+      if (winner === 'banker' && bets.banker > 0) won = true;
+      if (winner === 'tie' && bets.tie > 0) won = true;
+
+      const msgs = {
+        player: '🔵 PLAYER WIN!',
+        banker: '🔴 BANKER WIN!',
+        tie: '🟢 TIE!'
+      };
+
+      const profit = payout - totalBet();
+      let resultMsg = msgs[winner];
+      if (won && winner !== 'tie') resultMsg += ` +$${Math.floor(profit).toLocaleString()}`;
+      else if (winner === 'tie' && bets.tie > 0) resultMsg += ` +$${Math.floor(payout - bets.tie).toLocaleString()}`;
+
+      document.getElementById('resultArea').innerHTML = `
+        <div class="result-message ${won ? 'result-win' : (winner === 'tie' ? 'result-tie' : 'result-lose')}">
+          ${resultMsg}
+        </div>`;
+
+      // History
+      stats.total++;
+      if (won) stats.wins++;
+      addHistory(winner === 'player' ? 'P' : winner === 'banker' ? 'B' : 'T');
+
+      bets = { player: 0, tie: 0, banker: 0 };
+      gameInProgress = false;
+      document.getElementById('rebetBtn').disabled = false;
+      updateUI();
+    }
+
+    function animateDeal(container, card, delay_ms) {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          const el = renderCard(card, 0);
+          container.appendChild(el);
+          setTimeout(resolve, 400);
+        }, delay_ms);
+      });
+    }
+
+    function delay(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    function updateScores(p, b) {
+      document.getElementById('playerScore').textContent = p;
+      document.getElementById('bankerScore').textContent = b;
+    }
+
+    function addHistory(result) {
+      document.getElementById('historyArea').style.display = 'block';
+      const track = document.getElementById('historyTrack');
+      const dot = document.createElement('div');
+      dot.className = `history-dot ${result}`;
+      dot.textContent = result;
+      track.prepend(dot);
+      if (track.children.length > 40) track.lastChild.remove();
+    }
+
+    initGame();
+  </script>
+</body>
+</html>

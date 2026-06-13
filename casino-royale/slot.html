@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スロットマシン | Casino Royale</title>
+  <meta name="description" content="スロットマシンを無料練習。ジャックポットを狙って絵柄を揃えよう。">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ===== MACHINE BODY ===== */
+    .slot-machine {
+      background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      border: 3px solid var(--gold-dark);
+      border-radius: 24px;
+      padding: 2rem;
+      max-width: 520px;
+      margin: 0 auto;
+      box-shadow: 0 0 60px rgba(212,175,55,0.2), 0 30px 80px rgba(0,0,0,0.8);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slot-machine::before {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 21px;
+      border: 1px solid rgba(212,175,55,0.1);
+      pointer-events: none;
+    }
+
+    /* 上部装飾ライト */
+    .machine-lights {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 1.2rem;
+    }
+
+    .machine-light {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      animation: lightBlink 1.2s ease-in-out infinite;
+    }
+
+    .machine-light:nth-child(odd) { background: #e74c3c; animation-delay: 0s; }
+    .machine-light:nth-child(even) { background: var(--gold); animation-delay: 0.6s; }
+
+    @keyframes lightBlink {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px currentColor; }
+      50% { opacity: 0.3; box-shadow: none; }
+    }
+
+    .machine-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      font-weight: 900;
+      text-align: center;
+      color: var(--gold);
+      letter-spacing: 0.2em;
+      text-shadow: 0 0 20px rgba(212,175,55,0.6);
+      margin-bottom: 1.2rem;
+    }
+
+    /* ===== REELS WINDOW ===== */
+    .reels-frame {
+      background: #000;
+      border: 4px solid var(--gold-dark);
+      border-radius: 12px;
+      padding: 8px;
+      margin-bottom: 1.2rem;
+      position: relative;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+    }
+
+    /* 払い出しラインのハイライト */
+    .payline-overlay {
+      position: absolute;
+      left: 0; right: 0;
+      top: calc(33.33% + 8px);
+      height: calc(33.33%);
+      border-top: 2px dashed rgba(212,175,55,0.4);
+      border-bottom: 2px dashed rgba(212,175,55,0.4);
+      pointer-events: none;
+      z-index: 2;
+      transition: background 0.3s;
+    }
+
+    .payline-overlay.win-line {
+      background: rgba(212,175,55,0.15);
+      border-color: var(--gold);
+    }
+
+    .reels-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    /* ===== SINGLE REEL ===== */
+    .reel-wrap {
+      height: 270px; /* 3 cells × 90px */
+      overflow: hidden;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #0a0a10 0%, #111120 100%);
+      position: relative;
+    }
+
+    /* グラデーションマスク（上下をフェード） */
+    .reel-wrap::before,
+    .reel-wrap::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 30%;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .reel-wrap::before {
+      top: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%);
+    }
+    .reel-wrap::after {
+      bottom: 0;
+      background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 100%);
+    }
+
+    .reel-inner {
+      display: flex;
+      flex-direction: column;
+      transition: transform 0s;
+      will-change: transform;
+    }
+
+    .reel-cell {
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      position: relative;
+    }
+
+    .reel-cell.highlight {
+      background: rgba(212,175,55,0.12);
+    }
+
+    .reel-cell.jackpot-cell {
+      animation: jackpotPulse 0.4s ease-in-out infinite alternate;
+    }
+
+    @keyframes jackpotPulse {
+      from { filter: brightness(1); }
+      to { filter: brightness(1.8) drop-shadow(0 0 12px gold); }
+    }
+
+    /* ===== WIN DISPLAY ===== */
+    .win-display {
+      text-align: center;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0.8rem 0;
+    }
+
+    .win-amount {
+      font-family: 'Cinzel', serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 0 20px rgba(212,175,55,0.6);
+      animation: winPop 0.4s ease-out;
+    }
+
+    @keyframes winPop {
+      0% { transform: scale(0.5); opacity: 0; }
+      70% { transform: scale(1.2); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .jackpot-text {
+      font-family: 'Cinzel', serif;
+      font-size: 2.2rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffd700, #ff8c00, #ffd700);
+      background-size: 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: jackpotShine 1s linear infinite, winPop 0.4s ease-out;
+    }
+
+    @keyframes jackpotShine {
+      0% { background-position: 0%; }
+      100% { background-position: 200%; }
+    }
+
+    .no-win-text {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* ===== BET CONTROLS ===== */
+    .bet-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .bet-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .bet-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .bet-value {
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .bet-adjust {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .bet-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--gold-dark);
+      background: transparent;
+      color: var(--gold);
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bet-btn:hover { background: rgba(212,175,55,0.15); transform: scale(1.1); }
+
+    /* ===== SPIN BUTTON ===== */
+    .spin-btn-wrap {
+      text-align: center;
+      margin: 0.8rem 0;
+    }
+
+    .spin-btn {
+      width: 100%;
+      padding: 1rem 2rem;
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #a0820a, var(--gold), #f0d060, var(--gold), #a0820a);
+      background-size: 300%;
+      color: #1a1100;
+      cursor: pointer;
+      transition: all 0.2s;
+      animation: spinBtnShine 3s linear infinite;
+      box-shadow: 0 6px 20px rgba(212,175,55,0.4);
+    }
+
+    @keyframes spinBtnShine {
+      0% { background-position: 0%; }
+      100% { background-position: 300%; }
+    }
+
+    .spin-btn:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(212,175,55,0.6);
+    }
+
+    .spin-btn:active:not(:disabled) { transform: translateY(0); }
+
+    .spin-btn:disabled {
+      background: #333;
+      color: #666;
+      animation: none;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* ===== AUTO SPIN ===== */
+    .auto-controls {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .auto-btn {
+      padding: 0.4rem 0.9rem;
+      border: 1px solid rgba(212,175,55,0.3);
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .auto-btn:hover, .auto-btn.active {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(212,175,55,0.08);
+    }
+
+    /* ===== PAYOUT TABLE ===== */
+    .payout-table {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(212,175,55,0.2);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    .payout-table h4 {
+      font-family: 'Cinzel', serif;
+      color: var(--gold);
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+      text-align: center;
+      margin-bottom: 0.8rem;
+    }
+
+    .payout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.3rem;
+    }
+
+    .payout-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.03);
+      font-size: 0.8rem;
+    }
+
+    .payout-symbols { font-size: 1rem; letter-spacing: -0.1em; }
+    .payout-mult { color: var(--gold); font-weight: 700; margin-left: auto; }
+
+    /* ===== JACKPOT OVERLAY ===== */
+    .jackpot-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .jackpot-overlay.show {
+      display: flex;
+      animation: overlayIn 0.3s ease-out;
+    }
+
+    @keyframes overlayIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .jackpot-overlay-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2rem, 8vw, 4rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffd700, #ff8c00, #ffd700);
+      background-size: 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: jackpotShine 0.8s linear infinite;
+      text-align: center;
+    }
+
+    .jackpot-overlay-amount {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.5rem, 5vw, 3rem);
+      color: #fff;
+      text-align: center;
+    }
+
+    .jackpot-coins {
+      font-size: 3rem;
+      letter-spacing: 0.2em;
+      animation: float 1s ease-in-out infinite;
+    }
+
+    /* ===== STATS ===== */
+    .slot-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .slot-stat {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(212,175,55,0.1);
+      border-radius: 8px;
+      padding: 0.5rem;
+      text-align: center;
+    }
+
+    .slot-stat-label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .slot-stat-value { font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--gold); font-weight: 700; margin-top: 0.2rem; }
+
+    /* confetti */
+    .confetti-piece {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 10000;
+      animation: confettiFall linear forwards;
+    }
+
+    @keyframes confettiFall {
+      0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="header-mount"></div>
+
+  <!-- Jackpot Overlay -->
+  <div class="jackpot-overlay" id="jackpotOverlay" onclick="closeJackpot()">
+    <div class="jackpot-coins">🪙🎰🪙</div>
+    <div class="jackpot-overlay-title">JACKPOT!!</div>
+    <div class="jackpot-overlay-amount" id="jackpotAmount"></div>
+    <div style="font-size:0.85rem;color:var(--text-muted);margin-top:1rem;">タップして続ける</div>
+  </div>
+
+  <div class="page-hero">
+    <h1>スロットマシン</h1>
+    <p>SLOT MACHINE — 絵柄を揃えてジャックポットを狙え！</p>
+  </div>
+
+  <div class="game-container" style="max-width:600px;">
+
+    <!-- グローバル Stats -->
+    <div class="stats-bar">
+      <div class="stat-item"><div class="stat-label">残高</div><div class="stat-value" id="balDisplay">$10,000</div></div>
+      <div class="stat-item"><div class="stat-label">総獲得</div><div class="stat-value" id="totalWonDisplay">$0</div></div>
+      <div class="stat-item"><div class="stat-label">最高配当</div><div class="stat-value" id="bestWinDisplay">—</div></div>
+      <div class="stat-item"><div class="stat-label">スピン数</div><div class="stat-value" id="spinCountDisplay">0</div></div>
+    </div>
+
+    <!-- SLOT MACHINE -->
+    <div class="slot-machine">
+      <!-- 装飾ライト -->
+      <div class="machine-lights">
+        <div class="machine-light"></div><div class="machine-light"></div>
+        <div class="machine-light"></div><div class="machine-light"></div>
+        <div class="machine-light"></div><div class="machine-light"></div>
+        <div class="machine-light"></div><div class="machine-light"></div>
+        <div class="machine-light"></div>
+      </div>
+
+      <div class="machine-title">🎰 SLOT MACHINE</div>
+
+      <!-- リール -->
+      <div class="reels-frame">
+        <div class="payline-overlay" id="paylineOverlay"></div>
+        <div class="reels-row">
+          <div class="reel-wrap"><div class="reel-inner" id="reel0"></div></div>
+          <div class="reel-wrap"><div class="reel-inner" id="reel1"></div></div>
+          <div class="reel-wrap"><div class="reel-inner" id="reel2"></div></div>
+        </div>
+      </div>
+
+      <!-- Win表示 -->
+      <div class="win-display" id="winDisplay">
+        <span class="no-win-text">SPIN を押してスタート！</span>
+      </div>
+
+      <!-- ベット調整 -->
+      <div class="bet-controls">
+        <div class="bet-info">
+          <div class="bet-label">残高</div>
+          <div class="bet-value" id="balMini">$10,000</div>
+        </div>
+        <div class="bet-adjust">
+          <button class="bet-btn" onclick="changeBet(-1)">－</button>
+          <div class="bet-info" style="min-width:80px;">
+            <div class="bet-label">ベット</div>
+            <div class="bet-value" id="betDisplay">$10</div>
+          </div>
+          <button class="bet-btn" onclick="changeBet(1)">＋</button>
+        </div>
+        <div class="bet-info">
+          <div class="bet-label">スピン数</div>
+          <div class="bet-value" id="spinMini">0</div>
+        </div>
+      </div>
+
+      <!-- SPIN ボタン -->
+      <div class="spin-btn-wrap">
+        <button class="spin-btn" id="spinBtn" onclick="spin()">▶ SPIN</button>
+      </div>
+
+      <!-- オートスピン -->
+      <div class="auto-controls">
+        <span style="font-size:0.75rem;color:var(--text-muted);align-self:center;">オート:</span>
+        <button class="auto-btn" onclick="setAuto(5)" id="auto5">5回</button>
+        <button class="auto-btn" onclick="setAuto(10)" id="auto10">10回</button>
+        <button class="auto-btn" onclick="setAuto(20)" id="auto20">20回</button>
+        <button class="auto-btn" onclick="setAuto(0)" id="autoStop">停止</button>
+      </div>
+
+      <!-- スロット詳細stats -->
+      <div class="slot-stats">
+        <div class="slot-stat">
+          <div class="slot-stat-label">勝利</div>
+          <div class="slot-stat-value" id="winsCount">0</div>
+        </div>
+        <div class="slot-stat">
+          <div class="slot-stat-label">勝率</div>
+          <div class="slot-stat-value" id="winRate">—</div>
+        </div>
+        <div class="slot-stat">
+          <div class="slot-stat-label">収支</div>
+          <div class="slot-stat-value" id="profitLoss">$0</div>
+        </div>
+        <div class="slot-stat">
+          <div class="slot-stat-label">RTP</div>
+          <div class="slot-stat-value" id="rtpDisplay">—</div>
+        </div>
+      </div>
+
+      <!-- Payout Table -->
+      <div class="payout-table">
+        <h4>💰 ペイアウト表（ベット倍率）</h4>
+        <div class="payout-grid">
+          <div class="payout-row"><span class="payout-symbols">🎰🎰🎰</span><span class="payout-mult">×100 JACKPOT</span></div>
+          <div class="payout-row"><span class="payout-symbols">💎💎💎</span><span class="payout-mult">×50</span></div>
+          <div class="payout-row"><span class="payout-symbols">7️⃣7️⃣7️⃣</span><span class="payout-mult">×20</span></div>
+          <div class="payout-row"><span class="payout-symbols">🔔🔔🔔</span><span class="payout-mult">×10</span></div>
+          <div class="payout-row"><span class="payout-symbols">⭐⭐⭐</span><span class="payout-mult">×8</span></div>
+          <div class="payout-row"><span class="payout-symbols">🍇🍇🍇</span><span class="payout-mult">×5</span></div>
+          <div class="payout-row"><span class="payout-symbols">🍊🍊🍊</span><span class="payout-mult">×4</span></div>
+          <div class="payout-row"><span class="payout-symbols">🍋🍋🍋</span><span class="payout-mult">×3</span></div>
+          <div class="payout-row"><span class="payout-symbols">🍒🍒🍒</span><span class="payout-mult">×2</span></div>
+          <div class="payout-row"><span class="payout-symbols">🍒 （1枚）</span><span class="payout-mult">×1</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rules -->
+    <div class="rules-panel" style="margin-top:1.5rem;">
+      <h3>📖 スロットマシンのルール（完全版）</h3>
+      <ul>
+        <li><strong style="color:var(--gold)">【目的】</strong> SPINボタンを押してリールを回し、中央のペイライン（横一列）に同じ絵柄を3つ揃えると配当が得られる。</li>
+        <li><strong style="color:var(--gold)">【リールの仕組み】</strong> 3つのリール（縦の列）それぞれに複数の絵柄が入っており、ランダムに停止する。中央の列がペイライン。</li>
+        <li><strong style="color:var(--gold)">【ジャックポット】</strong> 🎰が3つ揃うと最高配当×100！ベットが$100なら$10,000の獲得。カジノで最も夢のある瞬間。</li>
+        <li><strong style="color:var(--gold)">【チェリーのボーナス】</strong> 🍒が1枚でもペイラインに出るとベット×1の小額配当。最も出やすい恩恵。</li>
+        <li><strong style="color:var(--gold)">【ベットの変更】</strong> ＋/－ボタンでベット額を変更できる（$1〜$500）。ジャックポット狙いなら高ベット、長く遊ぶなら低ベットが基本戦略。</li>
+        <li><strong style="color:var(--gold)">【オートスピン】</strong> 5・10・20回の連続スピンが設定可能。残高が不足すると自動停止。</li>
+        <li><strong style="color:var(--gold)">【RTP（Return to Player）】</strong> 理論上のペイアウト率。本物のスロットは通常85〜97%。長期的にはカジノ側が有利だが、短期では大勝ちも十分あり得る。</li>
+        <li><strong style="color:var(--gold)">【各絵柄の出現確率】</strong> 🍒が最も出やすく、🎰が最も出にくい。カジノでは「ほぼ揃いそう」に見せる演出が使われているが、毎回の結果は完全に独立したランダム。</li>
+        <li><strong style="color:var(--gold)">【世界のスロット事情】</strong> ラスベガスでは床面積の約70%がスロット。マカオではテーブルゲーム中心だが、最近は電子スロットも増加中。マニラ（PAGCOR管轄）でも多数設置。</li>
+        <li><strong style="color:var(--gold)">【攻略のコツ】</strong> スロットに必勝法はない。「予算を決めて、勝ったら早めに止める」のが最も賢い遊び方。</li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="js/casino.js"></script>
+  <script>
+    document.getElementById('header-mount').innerHTML = buildHeader('slot.html');
+
+    /* ===== SYMBOLS ===== */
+    // symbol, weight (出現しやすさ), payout multiplier (3揃い)
+    const SYMBOLS = [
+      { s: '🎰', w: 1,  p: 100 },
+      { s: '💎', w: 2,  p: 50  },
+      { s: '7️⃣', w: 3,  p: 20  },
+      { s: '🔔', w: 4,  p: 10  },
+      { s: '⭐', w: 5,  p: 8   },
+      { s: '🍇', w: 7,  p: 5   },
+      { s: '🍊', w: 8,  p: 4   },
+      { s: '🍋', w: 9,  p: 3   },
+      { s: '🍒', w: 12, p: 2   },
+    ];
+
+    // 重み付きシンボルプールを生成
+    const POOL = [];
+    for (const sym of SYMBOLS) {
+      for (let i = 0; i < sym.w; i++) POOL.push(sym);
+    }
+
+    /* ===== STATE ===== */
+    let bet = 10;
+    const BET_LEVELS = [1, 5, 10, 25, 50, 100, 200, 500];
+    let betIndex = 2; // $10 default
+    let spinning = false;
+    let autoRemaining = 0;
+    let autoTimer = null;
+
+    let stats = {
+      spins: 0,
+      wins: 0,
+      totalWon: 0,
+      totalBet: 0,
+      bestWin: 0,
+    };
+
+    /* ===== REEL INIT ===== */
+    const NUM_REELS = 3;
+    const VISIBLE_ROWS = 3;
+    const EXTRA_ROWS = 20; // スピン中に流れる行数
+    const CELL_H = 90; // px
+
+    // 各リールの現在の停止シンボル（上・中・下）
+    let reelResult = [
+      [null, null, null],
+      [null, null, null],
+      [null, null, null],
+    ];
+
+    function buildReels() {
+      for (let r = 0; r < NUM_REELS; r++) {
+        const inner = document.getElementById(`reel${r}`);
+        inner.innerHTML = '';
+        // 初期表示: ランダムに3行分
+        for (let i = 0; i < VISIBLE_ROWS; i++) {
+          const sym = POOL[Math.floor(Math.random() * POOL.length)];
+          const cell = document.createElement('div');
+          cell.className = 'reel-cell';
+          cell.textContent = sym.s;
+          inner.appendChild(cell);
+          reelResult[r][i] = sym;
+        }
+      }
+    }
+
+    function pickRandom() {
+      return POOL[Math.floor(Math.random() * POOL.length)];
+    }
+
+    /* ===== SPIN ===== */
+    async function spin() {
+      if (spinning) return;
+      const balance = getBalance();
+      if (bet > balance) {
+        showToast('残高が足りません！');
+        stopAuto();
+        return;
+      }
+
+      spinning = true;
+      document.getElementById('spinBtn').disabled = true;
+      document.getElementById('paylineOverlay').classList.remove('win-line');
+      document.getElementById('winDisplay').innerHTML = '<span class="no-win-text">🎲 Spinning...</span>';
+
+      // ベット消費
+      setBalance(balance - bet);
+      stats.spins++;
+      stats.totalBet += bet;
+      updateAllUI();
+
+      // 各リールの最終結果を決定
+      const finalSyms = [];
+      for (let r = 0; r < NUM_REELS; r++) {
+        finalSyms.push([pickRandom(), pickRandom(), pickRandom()]);
+      }
+
+      // リールアニメーション（順番に止まる）
+      const promises = [];
+      for (let r = 0; r < NUM_REELS; r++) {
+        const delay = r * 400;
+        const dur = 800 + r * 400;
+        promises.push(spinReel(r, finalSyms[r], delay, dur));
+      }
+      await Promise.all(promises);
+
+      // 結果判定
+      // 中央行（index 1）がペイライン
+      const line = [finalSyms[0][1], finalSyms[1][1], finalSyms[2][1]];
+      evaluateResult(line, finalSyms);
+
+      spinning = false;
+      document.getElementById('spinBtn').disabled = false;
+
+      // オートスピン
+      if (autoRemaining > 0) {
+        autoRemaining--;
+        updateAutoButtons();
+        if (autoRemaining > 0 && getBalance() >= bet) {
+          autoTimer = setTimeout(spin, 600);
+        } else {
+          stopAuto();
+        }
+      }
+    }
+
+    function spinReel(reelIdx, finalRow, delayMs, durationMs) {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          const inner = document.getElementById(`reel${reelIdx}`);
+
+          // スピン中に流れるシンボル列を生成（EXTRA_ROWS + 最終3行）
+          const spinSymbols = [];
+          for (let i = 0; i < EXTRA_ROWS; i++) {
+            spinSymbols.push(pickRandom());
+          }
+          // 最後に最終結果3行を追加
+          spinSymbols.push(...finalRow);
+
+          // DOMに全行を追加（上にprepend）
+          inner.innerHTML = '';
+          for (const sym of spinSymbols) {
+            const cell = document.createElement('div');
+            cell.className = 'reel-cell';
+            cell.textContent = sym.s;
+            inner.appendChild(cell);
+          }
+
+          // 初期位置: 最上部（全行分上にずらす）
+          const totalRows = spinSymbols.length;
+          const startOffset = -(totalRows - VISIBLE_ROWS) * CELL_H;
+          inner.style.transition = 'none';
+          inner.style.transform = `translateY(${startOffset}px)`;
+
+          // 1フレーム後にアニメ開始
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              inner.style.transition = `transform ${durationMs}ms cubic-bezier(0.25, 0.1, 0.1, 1)`;
+              inner.style.transform = 'translateY(0)';
+
+              setTimeout(() => {
+                // 中央行にハイライト
+                const cells = inner.querySelectorAll('.reel-cell');
+                const midIdx = totalRows - VISIBLE_ROWS + 1; // 中央（0-indexed）
+                if (cells[midIdx]) cells[midIdx].classList.add('highlight');
+                resolve();
+              }, durationMs + 50);
+            });
+          });
+        }, delayMs);
+      });
+    }
+
+    function evaluateResult(line, finalSyms) {
+      // 3つ揃い？
+      const s0 = line[0].s, s1 = line[1].s, s2 = line[2].s;
+      let payout = 0;
+      let msg = '';
+      let isJackpot = false;
+      let isWin = false;
+
+      if (s0 === s1 && s1 === s2) {
+        const symData = SYMBOLS.find(x => x.s === s0);
+        const mult = symData ? symData.p : 1;
+        payout = bet * mult;
+        isWin = true;
+
+        if (s0 === '🎰') {
+          isJackpot = true;
+          msg = `🎰🎰🎰 JACKPOT!! +$${payout.toLocaleString()}`;
+        } else {
+          msg = `${s0}${s1}${s2} WIN! ×${mult} → +$${payout.toLocaleString()}`;
+        }
+      } else if (line.some(s => s.s === '🍒')) {
+        // チェリー1枚ボーナス
+        payout = bet;
+        isWin = true;
+        msg = `🍒 Cherry Bonus! +$${payout.toLocaleString()}`;
+      }
+
+      if (isWin) {
+        setBalance(getBalance() + payout);
+        stats.wins++;
+        stats.totalWon += payout;
+        if (payout > stats.bestWin) stats.bestWin = payout;
+
+        document.getElementById('paylineOverlay').classList.add('win-line');
+
+        // ハイライト
+        for (let r = 0; r < NUM_REELS; r++) {
+          const inner = document.getElementById(`reel${r}`);
+          const cells = inner.querySelectorAll('.reel-cell');
+          const totalRows = cells.length;
+          const midIdx = totalRows - VISIBLE_ROWS + 1;
+          if (cells[midIdx]) {
+            if (isJackpot) cells[midIdx].classList.add('jackpot-cell');
+          }
+        }
+
+        if (isJackpot) {
+          document.getElementById('winDisplay').innerHTML = `<span class="jackpot-text">🎰 JACKPOT!! 🎰</span>`;
+          setTimeout(() => showJackpot(payout), 400);
+        } else {
+          document.getElementById('winDisplay').innerHTML = `<span class="win-amount">${msg}</span>`;
+        }
+
+        if (!isJackpot) launchConfetti(8);
+      } else {
+        document.getElementById('winDisplay').innerHTML = `<span class="no-win-text">ハズレ… ${s0} ${s1} ${s2}</span>`;
+      }
+
+      updateAllUI();
+    }
+
+    /* ===== JACKPOT OVERLAY ===== */
+    function showJackpot(amount) {
+      document.getElementById('jackpotAmount').textContent = `獲得: $${amount.toLocaleString()}`;
+      document.getElementById('jackpotOverlay').classList.add('show');
+      launchConfetti(30);
+    }
+
+    function closeJackpot() {
+      document.getElementById('jackpotOverlay').classList.remove('show');
+    }
+
+    /* ===== CONFETTI ===== */
+    function launchConfetti(count) {
+      const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96e6a1', '#dda0dd'];
+      for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+          const el = document.createElement('div');
+          el.className = 'confetti-piece';
+          el.style.left = Math.random() * 100 + 'vw';
+          el.style.top = '-20px';
+          el.style.background = colors[Math.floor(Math.random() * colors.length)];
+          el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+          el.style.animationDelay = (Math.random() * 0.5) + 's';
+          document.body.appendChild(el);
+          setTimeout(() => el.remove(), 4000);
+        }, i * 60);
+      }
+    }
+
+    /* ===== BET CONTROLS ===== */
+    function changeBet(dir) {
+      if (spinning) return;
+      betIndex = Math.max(0, Math.min(BET_LEVELS.length - 1, betIndex + dir));
+      bet = BET_LEVELS[betIndex];
+      document.getElementById('betDisplay').textContent = '$' + bet.toLocaleString();
+    }
+
+    /* ===== AUTO SPIN ===== */
+    function setAuto(count) {
+      if (count === 0) { stopAuto(); return; }
+      if (spinning) return;
+      autoRemaining = count;
+      updateAutoButtons();
+      spin();
+    }
+
+    function stopAuto() {
+      clearTimeout(autoTimer);
+      autoRemaining = 0;
+      updateAutoButtons();
+    }
+
+    function updateAutoButtons() {
+      ['5','10','20'].forEach(n => {
+        const btn = document.getElementById(`auto${n}`);
+        btn.classList.toggle('active', autoRemaining > 0 && autoRemaining <= parseInt(n));
+      });
+      if (autoRemaining === 0) {
+        ['5','10','20'].forEach(n => document.getElementById(`auto${n}`).classList.remove('active'));
+      }
+    }
+
+    /* ===== UI UPDATE ===== */
+    function updateAllUI() {
+      const bal = getBalance();
+      document.getElementById('balDisplay').textContent = '$' + bal.toLocaleString();
+      document.getElementById('balMini').textContent = '$' + bal.toLocaleString();
+      document.getElementById('spinCountDisplay').textContent = stats.spins;
+      document.getElementById('spinMini').textContent = stats.spins;
+      document.getElementById('totalWonDisplay').textContent = '$' + stats.totalWon.toLocaleString();
+      document.getElementById('bestWinDisplay').textContent = stats.bestWin > 0 ? '$' + stats.bestWin.toLocaleString() : '—';
+      document.getElementById('winsCount').textContent = stats.wins;
+
+      const wr = stats.spins > 0 ? Math.round(stats.wins / stats.spins * 100) + '%' : '—';
+      document.getElementById('winRate').textContent = wr;
+
+      const profit = stats.totalWon - stats.totalBet;
+      const profitEl = document.getElementById('profitLoss');
+      profitEl.textContent = (profit >= 0 ? '+' : '') + '$' + profit.toLocaleString();
+      profitEl.style.color = profit >= 0 ? '#2ecc71' : '#e74c3c';
+
+      const rtp = stats.totalBet > 0 ? Math.round(stats.totalWon / stats.totalBet * 100) + '%' : '—';
+      document.getElementById('rtpDisplay').textContent = rtp;
+    }
+
+    /* ===== INIT ===== */
+    buildReels();
+    updateAllUI();
+  </script>
+</body>
+</html>
