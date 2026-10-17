@@ -1,0 +1,21 @@
+<!doctype html><html lang="ja"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>連続再生の動作確認</title><style>body{margin:0;padding:22px;background:#111520;color:#e8e6f4;font:14px system-ui}button{padding:12px 22px;border:0;border-radius:9px;background:#a78bfa;cursor:pointer}iframe{display:block;width:100%;height:400px;border:1px solid #ffffff20;border-radius:12px;margin-top:20px}li{margin:8px 0;color:#bec8dd}#result{font-size:19px;font-weight:600}</style><h1>8曲の連続再生テスト</h1><p>各MP3の末尾へ移動して実際の再生終了を発生させ、次の曲への自動移行を検証します。</p><button id="run">全8曲と最後から最初への移行を検証</button><p id="result" role="status">待機中</p><ol id="log"></ol><iframe id="app" src="../" title="テスト対象のポモドーロ"></iframe><script>
+const frame=document.querySelector('#app'),run=document.querySelector('#run'),result=document.querySelector('#result'),log=document.querySelector('#log');
+const tracks=['study-session','forest-guitar','rainy-night','lofi-music','homework-focus','lofi-relax','coffee-shop','chill-music'];
+const waitFor=(condition)=>new Promise((resolve,reject)=>{const until=Date.now()+15000;const poll=setInterval(()=>{try{if(condition()){clearInterval(poll);resolve()}else if(Date.now()>until){clearInterval(poll);reject(new Error('再生状態の待機がタイムアウトしました'))}}catch(error){clearInterval(poll);reject(error)}},50)});
+run.onclick=async()=>{run.disabled=true;log.replaceChildren();result.textContent='検証中…';const doc=frame.contentDocument,audio=doc.querySelector('#bgm');try{
+ doc.querySelector('[data-panel="music"]').click();
+ doc.querySelector('[data-track="audio/lofi/study-session.mp3"]').click();
+ await waitFor(()=>!audio.paused&&audio.readyState>=3&&audio.duration>0);
+ for(let i=0;i<8;i++){
+  const before=audio.getAttribute('src');if(before!==`audio/lofi/${tracks[i]}.mp3`)throw new Error('想定と異なる再生順です');
+  audio.currentTime=Math.max(0,audio.duration-.12);
+  const expected=`audio/lofi/${tracks[(i+1)%8]}.mp3`;
+  await waitFor(()=>audio.getAttribute('src')===expected&&!audio.paused&&audio.readyState>=3&&audio.currentTime<audio.duration-1);
+  const item=document.createElement('li');item.textContent=`${i+1}曲目 → ${(i+1)%8+1}曲目：成功`;log.append(item);
+ }
+ result.textContent='成功：8曲を順に再生し、8曲目から1曲目へ戻りました';result.dataset.result='passed';
+}catch(error){result.textContent='失敗：'+error.message;result.dataset.result='failed'}finally{
+ const source=audio.getAttribute('src');const selected=doc.querySelector(`[data-track="${source}"]`);if(!audio.paused&&selected)selected.click();
+ if(!doc.querySelector('#panel').hidden)doc.querySelector('#close-panel').click();run.disabled=false;
+}};
+</script></html>
