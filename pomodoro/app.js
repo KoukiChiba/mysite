@@ -7,7 +7,7 @@ const MODES = Object.fromEntries(Object.entries(UI.hero.modes).map(([key,value])
 const TRACKS = [["audio/lofi/study-session.mp3", "Study Session"], ["audio/lofi/forest-guitar.mp3", "Forest Guitar"], ["audio/lofi/rainy-night.mp3", "Rainy Night"], ["audio/lofi/lofi-music.mp3", "Lofi Music"], ["audio/lofi/homework-focus.mp3", "Homework Focus"], ["audio/lofi/lofi-relax.mp3", "LoFi Relax"], ["audio/lofi/coffee-shop.mp3", "Coffee Shop"], ["audio/lofi/chill-music.mp3", "Chill Music"], ["Window_and_Cedar.mp3", "Window and Cedar"], ["Rain_on_the_Windowpane.mp3", "Rain on the Windowpane"], ["Beyond_the_Seventh_Star.mp3", "Beyond the Seventh Star"], ["Reflections_at_Eight.mp3", "Reflections at Eight"]];
 const COLORS = ['#60a5fa','#a78bfa','#2dd4bf','#a3e635','#fb7185','#f2c879'];
 const COLOR_NAMES=['blue','violet','teal','lime','rose','amber'];
-const defaults = () => ({settings:{focus:25,short:5,long:15,rounds:4,autoBreak:false,autoFocus:false,alarm:true,alarmSound:'digital',alarmVolume:1,volume:.6,track:TRACKS[0][0],goal:4,reward:'好きな飲み物でひと休み',scene:'castle',effect:'none',accent:COLORS[1],darkness:35,blur:0,quote:UI.hero.quotes[0]},timer:{mode:'focus',remaining:1500000,duration:1500000,running:false,deadline:0,accountedAt:0,cycle:0},tasks:[],activeTask:null,history:{},freezes:[],freezeWeeks:{},challenge:null,challengeWins:0});
+const defaults = () => ({settings:{focus:25,short:5,long:15,rounds:4,autoBreak:false,autoFocus:false,alarm:true,alarmSound:'digital',alarmVolume:1,volume:.6,shuffle:false,track:TRACKS[0][0],goal:4,reward:'好きな飲み物でひと休み',scene:'castle',effect:'none',accent:COLORS[1],darkness:35,blur:0,quote:UI.hero.quotes[0]},timer:{mode:'focus',remaining:1500000,duration:1500000,running:false,deadline:0,accountedAt:0,cycle:0},tasks:[],activeTask:null,history:{},freezes:[],freezeWeeks:{},challenge:null,challengeWins:0});
 function read(){try{const raw=JSON.parse(localStorage.getItem(KEY));const base=defaults();if(!raw)return base;return {...base,...raw,settings:{...base.settings,...raw.settings},timer:{...base.timer,...raw.timer}}}catch{return defaults()}}
 let state=read(), openPanel=null, toastTimer, miniWindow=null, audioContext, activeCustomURL;
 const legacyColors={'#b29ae8':'#a78bfa','#e6a0b5':'#fb7185','#91b9e8':'#60a5fa','#8bc9b1':'#2dd4bf','#e4bd88':'#f2c879','#d0d4e3':'#a3e635'};
@@ -60,8 +60,9 @@ $$('[data-alarm]').forEach(button=>button.onclick=()=>{state.settings.alarmSound
 $('#reset-counts').onclick=async()=>{if(!await ask(tr('settings.resetCounts'),tr('settings.resetScope'),tr('settings.reset')))return;const record=dayRecord();record.focus=record.short=record.long=0;state.timer.cycle=0;save();render();refreshPanel()};
 }
 if(openPanel==='music'){
-body.innerHTML=`${field(tr('hero.music'),check('ambientSound',!!ambientSource))}<hr><h3>${tr('player.tracks')}</h3><div class="lofi-track-list">${TRACKS.slice(0,8).map(([file,title],i)=>`<button class="track-row ${s.track===file&&!$('#bgm').paused?'active':''}" data-track="${file}" aria-pressed="${s.track===file&&!$('#bgm').paused}"><span class="track-number">${i+1}</span><span>${title}</span><span class="track-state">${s.track===file&&!$('#bgm').paused?'♫':''}</span></button>`).join('')}</div>${field(tr('player.volume'),range('volume',s.volume,0,1,.01))}<div class="spotify-soon"><span>◉　Spotify</span><small>${tr('player.soon')}</small></div>`;
+body.innerHTML=`${field(tr('hero.music'),check('ambientSound',!!ambientSource))}<hr>${field('シャッフル再生',check('shuffleMusic',s.shuffle))}<h3>${tr('player.tracks')}</h3><div class="lofi-track-list">${TRACKS.slice(0,8).map(([file,title],i)=>`<button class="track-row ${s.track===file&&!$('#bgm').paused?'active':''}" data-track="${file}" aria-pressed="${s.track===file&&!$('#bgm').paused}"><span class="track-number">${i+1}</span><span>${title}</span><span class="track-state">${s.track===file&&!$('#bgm').paused?'♫':''}</span></button>`).join('')}</div>${field(tr('player.volume'),range('volume',s.volume,0,1,.01))}<div class="spotify-soon"><span>◉　Spotify</span><small>${tr('player.soon')}</small></div>`;
 $$('[data-track]').forEach(button=>button.onclick=async()=>{if(state.settings.track===button.dataset.track&&!$('#bgm').paused)pauseMusic();else await selectTrack(button.dataset.track,true);if(openPanel==='music')refreshPanel()});
+$('[name=shuffleMusic]').onchange=e=>setMusicShuffle(e.target.checked);
 $('[name=ambientSound]').onchange=e=>toggleAmbient(e.target.checked);
 $('[name=volume]').oninput=e=>{state.settings.volume=Number(e.target.value);$('#bgm').volume=state.settings.volume;if(ambientGain)ambientGain.gain.value=state.settings.volume*.08;save()};
 }
@@ -88,12 +89,24 @@ function updateGoalSummary(){const el=$('#challenge-progress'),c=state.challenge
 const MUSIC_PLAYLIST=TRACKS.slice(0,8);
 let musicWanted=false,musicRequestId=0,musicFailureSource=null,musicWatchdog=null;
 const failedMusicTracks=new Set();
+let musicShuffleQueue=[],musicShuffleActive=null;
+function shuffledMusic(files){const result=[...files];for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]]}return result}
+function syncMusicShuffle(current){if(musicShuffleActive===state.settings.shuffle)return;musicShuffleActive=state.settings.shuffle;musicShuffleQueue=state.settings.shuffle?shuffledMusic(MUSIC_PLAYLIST.map(([src])=>src).filter(src=>src!==current)):[]}
+function setMusicShuffle(enabled){state.settings.shuffle=enabled;musicShuffleActive=null;syncMusicShuffle($('#bgm').getAttribute('src'));save();refreshMusicState()}
+function nextShuffledMusic(current){
+ musicShuffleQueue=musicShuffleQueue.filter(src=>!failedMusicTracks.has(src));
+ if(!musicShuffleQueue.length){
+  musicShuffleQueue=shuffledMusic(MUSIC_PLAYLIST.map(([src])=>src).filter(src=>!failedMusicTracks.has(src)));
+  if(musicShuffleQueue.length>1&&musicShuffleQueue[0]===current){const j=1+Math.floor(Math.random()*(musicShuffleQueue.length-1));[musicShuffleQueue[0],musicShuffleQueue[j]]=[musicShuffleQueue[j],musicShuffleQueue[0]]}
+ }
+ return musicShuffleQueue.shift();
+}
 function refreshMusicState(){if(openPanel==='music')refreshPanel()}
 function clearMusicWatchdog(){clearTimeout(musicWatchdog);musicWatchdog=null}
 function pauseMusic(){musicWanted=false;musicRequestId++;clearMusicWatchdog();$('#bgm').pause();refreshMusicState()}
 async function selectTrack(file,autoplay,automatic=false){
  if(!MUSIC_PLAYLIST.some(([src])=>src===file))return;
- if(!automatic)failedMusicTracks.clear();
+ if(!automatic){failedMusicTracks.clear();syncMusicShuffle(file);if(state.settings.shuffle)musicShuffleQueue=musicShuffleQueue.filter(src=>src!==file);}
  clearMusicWatchdog();musicFailureSource=null;
  const request=++musicRequestId,audio=$('#bgm');
  musicWanted=autoplay;state.settings.track=file;save();audio.loop=false;
@@ -115,6 +128,8 @@ async function playMusic(request=musicRequestId){
 async function advanceMusic(){
  if(!musicWanted)return;
  const current=$('#bgm').getAttribute('src')||state.settings.track;
+ syncMusicShuffle(current);
+ if(state.settings.shuffle){const next=nextShuffledMusic(current);if(next){await selectTrack(next,true,true);return}pauseMusic();toast('音楽を読み込めませんでした。曲を選び直してください。');return}
  const index=MUSIC_PLAYLIST.findIndex(([src])=>src===current);
  for(let step=1;step<=MUSIC_PLAYLIST.length;step++){
   const next=MUSIC_PLAYLIST[(index+step+MUSIC_PLAYLIST.length)%MUSIC_PLAYLIST.length][0];

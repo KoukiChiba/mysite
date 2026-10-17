@@ -1,4 +1,4 @@
-const CACHE='pomodoro-v5';
+const CACHE='pomodoro-v6';
 const SHELL=['./','index.html','style.css','app.js','ui-text.js','worker.js','manifest.webmanifest','assets/icon.svg','assets/landscape.svg','assets/castle.jpg','assets/city.jpg','assets/lofi.webp','assets/lofi.mp4','assets/bg-fantasy.webp','assets/bg-pastel.webp','assets/bg-cyberpunk.webp'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('pomodoro-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
