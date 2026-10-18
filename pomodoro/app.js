@@ -5,11 +5,14 @@ const KEY = 'pomodoro_workspace_v1';
 const tr=(path,values={})=>{const value=path.split('.').reduce((node,key)=>node?.[key],UI);return String(value??path).replace(/\{(\w+)\}/g,(_,key)=>values[key]??'')};
 const MODES = Object.fromEntries(Object.entries(UI.hero.modes).map(([key,value])=>[key,tr('hero.modeSession',{mode:value})]));
 const TRACKS = [["audio/lofi/study-session.mp3", "Study Session"], ["audio/lofi/forest-guitar.mp3", "Forest Guitar"], ["audio/lofi/rainy-night.mp3", "Rainy Night"], ["audio/lofi/lofi-music.mp3", "Lofi Music"], ["audio/lofi/homework-focus.mp3", "Homework Focus"], ["audio/lofi/lofi-relax.mp3", "LoFi Relax"], ["audio/lofi/coffee-shop.mp3", "Coffee Shop"], ["audio/lofi/chill-music.mp3", "Chill Music"], ["Window_and_Cedar.mp3", "Window and Cedar"], ["Rain_on_the_Windowpane.mp3", "Rain on the Windowpane"], ["Beyond_the_Seventh_Star.mp3", "Beyond the Seventh Star"], ["Reflections_at_Eight.mp3", "Reflections at Eight"]];
+const BREAK_TRACKS=[['audio/break/quiet-piano-v2.wav','ひと息のピアノ'],['audio/break/acoustic-guitar-v2.wav','木陰のアコースティックギター'],['audio/break/evening-drift-v2.wav','夕暮れのアンビエント']];
 const COLORS = ['#60a5fa','#a78bfa','#2dd4bf','#a3e635','#fb7185','#f2c879'];
 const COLOR_NAMES=['blue','violet','teal','lime','rose','amber'];
-const defaults = () => ({settings:{focus:25,short:5,long:15,rounds:4,autoBreak:false,autoFocus:false,alarm:true,alarmSound:'digital',alarmVolume:1,volume:.6,shuffle:false,track:TRACKS[0][0],goal:4,reward:'好きな飲み物でひと休み',scene:'castle',effect:'none',accent:COLORS[1],darkness:35,blur:0,quote:UI.hero.quotes[0]},timer:{mode:'focus',remaining:1500000,duration:1500000,running:false,deadline:0,accountedAt:0,cycle:0},tasks:[],activeTask:null,history:{},freezes:[],freezeWeeks:{},challenge:null,challengeWins:0});
+const defaults = () => ({settings:{focus:25,short:5,long:15,rounds:4,autoBreak:false,autoFocus:false,alarm:true,alarmSound:'digital',alarmVolume:1,volume:.6,shuffle:false,breakShuffle:true,breakTrack:BREAK_TRACKS[0][0],track:TRACKS[0][0],goal:4,reward:'好きな飲み物でひと休み',scene:'castle',effect:'none',accent:COLORS[1],darkness:35,blur:0,quote:UI.hero.quotes[0]},timer:{mode:'focus',remaining:1500000,duration:1500000,running:false,deadline:0,accountedAt:0,cycle:0},tasks:[],activeTask:null,history:{},freezes:[],freezeWeeks:{},challenge:null,challengeWins:0});
 function read(){try{const raw=JSON.parse(localStorage.getItem(KEY));const base=defaults();if(!raw)return base;return {...base,...raw,settings:{...base.settings,...raw.settings},timer:{...base.timer,...raw.timer}}}catch{return defaults()}}
 let state=read(), openPanel=null, toastTimer, miniWindow=null, audioContext, activeCustomURL;
+const previousBreakTracks={'audio/break/quiet-piano.wav':BREAK_TRACKS[0][0],'audio/break/garden-melody.wav':BREAK_TRACKS[1][0],'audio/break/evening-drift.wav':BREAK_TRACKS[2][0]};
+if(previousBreakTracks[state.settings.breakTrack])state.settings.breakTrack=previousBreakTracks[state.settings.breakTrack];
 const legacyColors={'#b29ae8':'#a78bfa','#e6a0b5':'#fb7185','#91b9e8':'#60a5fa','#8bc9b1':'#2dd4bf','#e4bd88':'#f2c879','#d0d4e3':'#a3e635'};
 if(legacyColors[state.settings.accent])state.settings.accent=legacyColors[state.settings.accent];
 if(state.settings.quote==='「小さな一歩が、遠くへ連れていく。」')state.settings.quote=UI.hero.quotes[0];
@@ -23,7 +26,7 @@ function minutes(ms){return `${Math.floor(ms/60000)}分`}
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3500)}
 function credit(start,end){if(end<=start||state.timer.mode!=='focus')return;const task=state.tasks.find(t=>t.id===state.activeTask&&!t.done);if(task)task.ms+=end-start;let cursor=start;while(cursor<end){const date=new Date(cursor);const midnight=new Date(date.getFullYear(),date.getMonth(),date.getDate()+1).getTime();const until=Math.min(end,midnight);dayRecord(dayKey(date)).ms+=until-cursor;cursor=until}completeChallenge()}
 function reconcile(){const t=state.timer;if(!t.running)return false;const now=Date.now(),end=Math.min(now,t.deadline);credit(t.accountedAt,end);t.accountedAt=end;t.remaining=Math.max(0,t.deadline-now);if(t.remaining===0){dayRecord(dayKey(new Date(t.deadline)))[t.mode]++;if(t.mode==='focus')t.cycle++;const completed=t.mode;t.running=false;const next=completed==='focus'?(t.cycle%state.settings.rounds===0?'long':'short'):'focus';setMode(next,false);toast(completed==='focus'?'集中セッション完了。ひと息つきましょう。':'休憩が終わりました。次の集中へ。');if(state.settings.alarm)alarm();if((next==='focus'&&state.settings.autoFocus)||(next!=='focus'&&state.settings.autoBreak))startTimer();refreshPanel();}return true}
-function setMode(mode,persist=true){if(persist)reconcile();const t=state.timer;t.mode=mode;t.running=false;t.duration=state.settings[mode]*60000;t.remaining=t.duration;t.deadline=0;t.accountedAt=0;if(persist){save();render()}}
+function setMode(mode,persist=true){if(persist)reconcile();const t=state.timer;t.mode=mode;t.running=false;t.duration=state.settings[mode]*60000;t.remaining=t.duration;t.deadline=0;t.accountedAt=0;syncSessionMusic();if(persist){save();render()}}
 function startTimer(){const t=state.timer;if(t.remaining<=0)t.remaining=t.duration;t.running=true;t.deadline=Date.now()+t.remaining;t.accountedAt=Date.now()}
 let pendingConfirmation=false;
 function ask(title,body,action){if(pendingConfirmation)return Promise.resolve(false);const dialog=$('#confirm-dialog');$('#confirm-title').textContent=title;$('#confirm-body').textContent=body;$('#confirm-action').textContent=action;dialog.returnValue='';pendingConfirmation=true;return new Promise(resolve=>{dialog.addEventListener('close',()=>{pendingConfirmation=false;resolve(dialog.returnValue==='confirm')},{once:true});dialog.showModal()})}
@@ -38,7 +41,7 @@ function prepareAudio(){try{audioContext??=new (window.AudioContext||window.webk
 function isActiveDay(record){return !!record&&(record.focus>0||record.ms>=900000)}
 function streak(){const d=new Date();let count=0;if(!(isActiveDay(state.history[dayKey(d)])))d.setDate(d.getDate()-1);for(let i=0;i<36500;i++){const key=dayKey(d);if(isActiveDay(state.history[key]))count++;else if(!state.freezes.includes(key))break;d.setDate(d.getDate()-1)}return count}
 function freezeInfo(){const d=new Date();const monday=new Date(d.getFullYear(),d.getMonth(),d.getDate()-((d.getDay()+6)%7));d.setDate(d.getDate()-1);const missed=dayKey(d);d.setDate(d.getDate()-1);return{week:dayKey(monday),missed,eligible:!(isActiveDay(state.history[missed]))&&!state.freezes.includes(missed)&&!!(isActiveDay(state.history[dayKey(d)]))&&!state.freezeWeeks[dayKey(monday)]}}
-function render(){const t=state.timer;document.body.dataset.mode=t.mode;const record=state.history[dayKey()]||{};$('#clock').textContent=formatTime(t.remaining);$('#clock').setAttribute('aria-label',`残り ${formatTime(t.remaining)}`);$('#mode-label').textContent=MODES[t.mode];$('#progress').style.strokeDashoffset=1043.01*(1-t.remaining/t.duration);$$('[data-mode]').forEach(el=>el.setAttribute('aria-selected',String(el.dataset.mode===t.mode)));Object.keys(MODES).forEach(m=>$('#count-'+m).textContent=record[m]||0);$('#toggle span').textContent=t.running?'一時停止':'開始';$('#toggle use').setAttribute('href',t.running?'#i-pause':'#i-play');$('#streak').textContent=streak();const active=state.tasks.find(t=>t.id===state.activeTask&&!t.done);$('#active-task').textContent=active?.name||'';$('#active-task').hidden=!active;$('#reset').disabled=!t.running&&t.remaining===t.duration;$('#streak').parentElement?.setAttribute('aria-label',tr('hero.streakTitle',{n:streak()}));$('#quote').textContent=state.settings.quote;document.title=t.running?formatTime(t.remaining)+' '+UI.hero.modes[t.mode]: 'ポモドーロタイマー｜集中して短時間で成果を出す';renderMini();if(openPanel==='challenge')updateGoalSummary()}
+function render(){syncSessionMusic();const t=state.timer;document.body.dataset.mode=t.mode;const record=state.history[dayKey()]||{};$('#clock').textContent=formatTime(t.remaining);$('#clock').setAttribute('aria-label',`残り ${formatTime(t.remaining)}`);$('#mode-label').textContent=MODES[t.mode];$('#progress').style.strokeDashoffset=1043.01*(1-t.remaining/t.duration);$$('[data-mode]').forEach(el=>el.setAttribute('aria-selected',String(el.dataset.mode===t.mode)));Object.keys(MODES).forEach(m=>$('#count-'+m).textContent=record[m]||0);$('#toggle span').textContent=t.running?'一時停止':'開始';$('#toggle use').setAttribute('href',t.running?'#i-pause':'#i-play');$('#streak').textContent=streak();const active=state.tasks.find(t=>t.id===state.activeTask&&!t.done);$('#active-task').textContent=active?.name||'';$('#active-task').hidden=!active;$('#reset').disabled=!t.running&&t.remaining===t.duration;$('#streak').parentElement?.setAttribute('aria-label',tr('hero.streakTitle',{n:streak()}));$('#quote').textContent=state.settings.quote;document.title=t.running?formatTime(t.remaining)+' '+UI.hero.modes[t.mode]: 'ポモドーロタイマー｜集中して短時間で成果を出す';renderMini();if(openPanel==='challenge')updateGoalSummary()}
 function appearance(){const s=state.settings;document.documentElement.style.setProperty('--accent',s.accent);document.documentElement.style.setProperty('--accent-rgb',s.accent.slice(1).match(/../g).map(v=>parseInt(v,16)).join(','));document.body.dataset.scene=s.scene;$('.scenery').style.filter=`brightness(${(100-s.darkness)/65}) blur(${s.blur}px)`;$('#ambience').className=s.effect;$('#ambience').replaceChildren();if(s.effect!=='none')for(let i=0;i<35;i++){const dot=document.createElement('span');dot.style.left=`${Math.random()*100}%`;dot.style.top=s.effect==='stars'?`${Math.random()*100}%`:'0';dot.style.animationDelay=`-${Math.random()*15}s`;dot.style.animationDuration=s.effect==='rain'?`${1+Math.random()}s`:`${6+Math.random()*15}s`;$('#ambience').append(dot)}if(s.scene==='custom')loadCustomBackground();else{$('.scenery').style.backgroundImage='';if(activeCustomURL){URL.revokeObjectURL(activeCustomURL);activeCustomURL=null}}syncBackgroundVideo()}
 function field(label,input){return `<label class="field"><span>${label}</span>${input}</label>`}
 function num(name,value,min=1,max=90){return `<input type="number" name="${name}" value="${value}" min="${min}" max="${max}" required>`}
@@ -60,8 +63,8 @@ $$('[data-alarm]').forEach(button=>button.onclick=()=>{state.settings.alarmSound
 $('#reset-counts').onclick=async()=>{if(!await ask(tr('settings.resetCounts'),tr('settings.resetScope'),tr('settings.reset')))return;const record=dayRecord();record.focus=record.short=record.long=0;state.timer.cycle=0;save();render();refreshPanel()};
 }
 if(openPanel==='music'){
-body.innerHTML=`${field(tr('hero.music'),check('ambientSound',!!ambientSource))}<hr>${field('シャッフル再生',check('shuffleMusic',s.shuffle))}<h3>${tr('player.tracks')}</h3><div class="lofi-track-list">${TRACKS.slice(0,8).map(([file,title],i)=>`<button class="track-row ${s.track===file&&!$('#bgm').paused?'active':''}" data-track="${file}" aria-pressed="${s.track===file&&!$('#bgm').paused}"><span class="track-number">${i+1}</span><span>${title}</span><span class="track-state">${s.track===file&&!$('#bgm').paused?'♫':''}</span></button>`).join('')}</div>${field(tr('player.volume'),range('volume',s.volume,0,1,.01))}<div class="spotify-soon"><span>◉　Spotify</span><small>${tr('player.soon')}</small></div>`;
-$$('[data-track]').forEach(button=>button.onclick=async()=>{if(state.settings.track===button.dataset.track&&!$('#bgm').paused)pauseMusic();else await selectTrack(button.dataset.track,true);if(openPanel==='music')refreshPanel()});
+body.innerHTML=`${field(tr('hero.music'),check('ambientSound',!!ambientSource))}<hr>${field('シャッフル再生',check('shuffleMusic',musicShuffleEnabled()))}<p class="hint">集中・休憩に合わせてBGMを自動切り替え</p><h3>${musicGroup==='focus'?'集中用 · Lofi トラック':'休憩用 · リラックス音楽'}</h3><div class="lofi-track-list">${MUSIC_PLAYLIST.map(([file,title],i)=>`<button class="track-row ${selectedMusicTrack()===file&&!$('#bgm').paused?'active':''}" data-track="${file}" aria-pressed="${selectedMusicTrack()===file&&!$('#bgm').paused}"><span class="track-number">${i+1}</span><span>${title}</span><span class="track-state">${selectedMusicTrack()===file&&!$('#bgm').paused?'♫':''}</span></button>`).join('')}</div>${field(tr('player.volume'),range('volume',s.volume,0,1,.01))}<div class="spotify-soon"><span>◉　Spotify</span><small>${tr('player.soon')}</small></div>`;
+$$('[data-track]').forEach(button=>button.onclick=async()=>{if(selectedMusicTrack()===button.dataset.track&&!$('#bgm').paused)pauseMusic();else await selectTrack(button.dataset.track,true);if(openPanel==='music')refreshPanel()});
 $('[name=shuffleMusic]').onchange=e=>setMusicShuffle(e.target.checked);
 $('[name=ambientSound]').onchange=e=>toggleAmbient(e.target.checked);
 $('[name=volume]').oninput=e=>{state.settings.volume=Number(e.target.value);$('#bgm').volume=state.settings.volume;if(ambientGain)ambientGain.gain.value=state.settings.volume*.08;save()};
@@ -86,13 +89,30 @@ if(c?.day===today){const done=c.completed;body.innerHTML=`<h3 class="challenge-t
 }else{body.innerHTML=`${c&&!c.completed?`<p class="hint">${tr('challenge.expiredBody')}</p>`:''}<h3 class="challenge-title">${tr('challenge.title',{day:weekday})}</h3><form id="challenge-form"><div class="challenge-duration">${challengeStepper('challengeHours',tr('challenge.hours'),2,23)}${challengeStepper('challengeMinutes',tr('challenge.minutes'),0,59,5)}</div><p class="hint">${tr('challenge.hint')}</p><button class="primary wide">${tr('challenge.accept')}</button></form><p class="prize">🎁 ${tr('challenge.prize')}</p>`;$$('[data-challenge]').forEach(button=>button.onclick=()=>{const input=$(`[name=${button.dataset.challenge}]`);input.value=Math.min(Number(input.max),Math.max(0,Number(input.value)+Number(button.dataset.change)))});$('#challenge-form').onsubmit=e=>{e.preventDefault();const hours=Number($('[name=challengeHours]').value),mins=Number($('[name=challengeMinutes]').value);const target=(hours*60+mins)*60000;if(!Number.isInteger(hours)||!Number.isInteger(mins)||hours<0||hours>23||mins<0||mins>59||target<=0)return;state.challenge={day:today,target,completed:false};completeChallenge();save();renderChallenge()}}
 }
 function updateGoalSummary(){const el=$('#challenge-progress'),c=state.challenge;if(!el||!c||c.day!==dayKey())return;completeChallenge();if(c.completed&&$('#challenge-action')?.dataset.completed!=='true'){save();renderChallenge();return}el.textContent=c.completed?tr('challenge.rewardEyebrow'):tr('challenge.remaining',{time:minutes(Math.max(0,c.target-(state.history[dayKey()]?.ms||0)))})}
-const MUSIC_PLAYLIST=TRACKS.slice(0,8);
+let musicGroup=state.timer.mode==='focus'?'focus':'break';
+let MUSIC_PLAYLIST=musicGroup==='focus'?TRACKS.slice(0,8):BREAK_TRACKS;
+const musicSessions={focus:{position:0},break:{position:0}};
+function selectedMusicTrack(){return musicGroup==='focus'?state.settings.track:state.settings.breakTrack}
+function musicShuffleEnabled(){return musicGroup==='focus'?state.settings.shuffle:state.settings.breakShuffle}
+function syncSessionMusic(){
+ const group=state.timer.mode==='focus'?'focus':'break';
+ if(group===musicGroup)return;
+ const audio=$('#bgm'),resume=musicWanted;
+ musicSessions[musicGroup]={position:Number.isFinite(audio.currentTime)?audio.currentTime:0,queue:musicShuffleQueue,active:musicShuffleActive};
+ musicRequestId++;clearMusicWatchdog();audio.pause();audio.onloadedmetadata=null;
+ musicGroup=group;MUSIC_PLAYLIST=group==='focus'?TRACKS.slice(0,8):BREAK_TRACKS;
+ musicShuffleQueue=musicSessions[group].queue||[];musicShuffleActive=musicSessions[group].active??null;
+ failedMusicTracks.clear();musicFailureSource=null;
+ const file=MUSIC_PLAYLIST.some(([src])=>src===selectedMusicTrack())?selectedMusicTrack():MUSIC_PLAYLIST[0][0];
+ selectTrack(file,resume,true,musicSessions[group].position);refreshMusicState();
+}
+
 let musicWanted=false,musicRequestId=0,musicFailureSource=null,musicWatchdog=null;
 const failedMusicTracks=new Set();
 let musicShuffleQueue=[],musicShuffleActive=null;
 function shuffledMusic(files){const result=[...files];for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]]}return result}
-function syncMusicShuffle(current){if(musicShuffleActive===state.settings.shuffle)return;musicShuffleActive=state.settings.shuffle;musicShuffleQueue=state.settings.shuffle?shuffledMusic(MUSIC_PLAYLIST.map(([src])=>src).filter(src=>src!==current)):[]}
-function setMusicShuffle(enabled){state.settings.shuffle=enabled;musicShuffleActive=null;syncMusicShuffle($('#bgm').getAttribute('src'));save();refreshMusicState()}
+function syncMusicShuffle(current){if(musicShuffleActive===musicShuffleEnabled())return;musicShuffleActive=musicShuffleEnabled();musicShuffleQueue=musicShuffleEnabled()?shuffledMusic(MUSIC_PLAYLIST.map(([src])=>src).filter(src=>src!==current)):[]}
+function setMusicShuffle(enabled){state.settings[musicGroup==='focus'?'shuffle':'breakShuffle']=enabled;musicShuffleActive=null;syncMusicShuffle($('#bgm').getAttribute('src'));save();refreshMusicState()}
 function nextShuffledMusic(current){
  musicShuffleQueue=musicShuffleQueue.filter(src=>!failedMusicTracks.has(src));
  if(!musicShuffleQueue.length){
@@ -104,12 +124,15 @@ function nextShuffledMusic(current){
 function refreshMusicState(){if(openPanel==='music')refreshPanel()}
 function clearMusicWatchdog(){clearTimeout(musicWatchdog);musicWatchdog=null}
 function pauseMusic(){musicWanted=false;musicRequestId++;clearMusicWatchdog();$('#bgm').pause();refreshMusicState()}
-async function selectTrack(file,autoplay,automatic=false){
+async function selectTrack(file,autoplay,automatic=false,position=0){
  if(!MUSIC_PLAYLIST.some(([src])=>src===file))return;
- if(!automatic){failedMusicTracks.clear();syncMusicShuffle(file);if(state.settings.shuffle)musicShuffleQueue=musicShuffleQueue.filter(src=>src!==file);}
+ if(!automatic){failedMusicTracks.clear();syncMusicShuffle(file);if(musicShuffleEnabled())musicShuffleQueue=musicShuffleQueue.filter(src=>src!==file);}
  clearMusicWatchdog();musicFailureSource=null;
  const request=++musicRequestId,audio=$('#bgm');
- musicWanted=autoplay;state.settings.track=file;save();audio.loop=false;
+ musicWanted=autoplay;state.settings[musicGroup==='focus'?'track':'breakTrack']=file;save();audio.loop=false;
+ audio.onloadedmetadata=null;
+ if(position>0){const restore=()=>{if(request===musicRequestId)audio.currentTime=Math.min(position,Math.max(0,(audio.duration||position+1)-.1));audio.onloadedmetadata=null};audio.onloadedmetadata=restore;}
+
  if(audio.getAttribute('src')!==file)audio.src=file;
  if(autoplay)await playMusic(request);
 }
@@ -129,7 +152,7 @@ async function advanceMusic(){
  if(!musicWanted)return;
  const current=$('#bgm').getAttribute('src')||state.settings.track;
  syncMusicShuffle(current);
- if(state.settings.shuffle){const next=nextShuffledMusic(current);if(next){await selectTrack(next,true,true);return}pauseMusic();toast('音楽を読み込めませんでした。曲を選び直してください。');return}
+ if(musicShuffleEnabled()){const next=nextShuffledMusic(current);if(next){await selectTrack(next,true,true);return}pauseMusic();toast('音楽を読み込めませんでした。曲を選び直してください。');return}
  const index=MUSIC_PLAYLIST.findIndex(([src])=>src===current);
  for(let step=1;step<=MUSIC_PLAYLIST.length;step++){
   const next=MUSIC_PLAYLIST[(index+step+MUSIC_PLAYLIST.length)%MUSIC_PLAYLIST.length][0];

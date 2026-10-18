@@ -23,3 +23,9 @@
 - ファンタジー： https://pomodorotimer.online/bg-fantasy.webp
 - パステル： https://pomodorotimer.online/bg-pastel.webp
 - サイバーパンク： https://pomodorotimer.online/bg-cyberpunk.webp
+
+## 休憩用の器楽曲（2026-10-18）
+
+`audio/break/quiet-piano-v2.wav`、`acoustic-guitar-v2.wav`、`evening-drift-v2.wav` は、このアプリ向けのオリジナル合成音源。既存楽曲・録音・サンプルは使用していない。生成スクリプトは `tools/generate-break-music.py`。
+
+ピアノは打鍵と減衰する倍音、ギターは弦の撥弦音と胴の短い共鳴、アンビエントは長い持続和音とフルート風旋律を別々に合成する。曲ごとに拍子・テンポ・和音・音域・残響も変えている。自然音だけの曲は含まない。
